@@ -3,6 +3,7 @@ import { getAiProvider } from '@/lib/ai';
 import { ActionProposal, ProposedDeletePayload, ProposedTransactionPayload, ProposedUpdatePayload } from '@/types/chat';
 import { AiProviderContext } from '@/lib/ai/types';
 import { getTodayISO } from '@/lib/finance/dates';
+import { Transaction } from '@/types/finance';
 
 export async function POST(req: NextRequest) {
   try {
@@ -24,14 +25,16 @@ export async function POST(req: NextRequest) {
     let actionProposal: ActionProposal | undefined;
     const proposalId = `prop-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
 
-    switch (result.intent.intent) {
+    const parsedIntent = result.intent;
+
+    switch (parsedIntent.intent) {
       case 'log_expense': {
         const payload: ProposedTransactionPayload = {
           type: 'expense',
-          amountPaise: result.intent.amountPaise,
-          description: result.intent.description,
-          categoryId: result.intent.categoryGuess || 'cat-misc',
-          isOneOff: Boolean(result.intent.isOneOff),
+          amountPaise: parsedIntent.amountPaise,
+          description: parsedIntent.description,
+          categoryId: parsedIntent.categoryGuess || 'cat-misc',
+          isOneOff: Boolean(parsedIntent.isOneOff),
           transactionDate: todayISO,
         };
         actionProposal = {
@@ -44,7 +47,7 @@ export async function POST(req: NextRequest) {
       }
 
       case 'log_batch_expenses': {
-        const transactions: ProposedTransactionPayload[] = result.intent.expenses.map(e => ({
+        const transactions: ProposedTransactionPayload[] = parsedIntent.expenses.map(e => ({
           type: 'expense',
           amountPaise: e.amountPaise,
           description: e.description,
@@ -59,7 +62,7 @@ export async function POST(req: NextRequest) {
           status: 'pending',
           payload: {
             transactions,
-            totalAmountPaise: result.intent.totalAmountPaise,
+            totalAmountPaise: parsedIntent.totalAmountPaise,
           },
         };
         break;
@@ -68,10 +71,10 @@ export async function POST(req: NextRequest) {
       case 'log_income': {
         const payload: ProposedTransactionPayload = {
           type: 'income',
-          amountPaise: result.intent.amountPaise,
-          description: result.intent.description,
+          amountPaise: parsedIntent.amountPaise,
+          description: parsedIntent.description,
           categoryId: 'cat-misc',
-          isRefund: Boolean(result.intent.isRefund),
+          isRefund: Boolean(parsedIntent.isRefund),
           transactionDate: todayISO,
         };
         actionProposal = {
@@ -84,17 +87,50 @@ export async function POST(req: NextRequest) {
       }
 
       case 'correct_transaction': {
-        const recentTx = context.recentTransactions && context.recentTransactions.length > 0
-          ? context.recentTransactions[context.recentTransactions.length - 1]
-          : null;
+        const txList = context.recentTransactions && context.recentTransactions.length > 0
+          ? context.recentTransactions
+          : [];
 
-        if (recentTx) {
+        let targetTx: Transaction | null = null;
+
+        // 1. Direct ID match if identified by AI
+        if (parsedIntent.targetTransactionId) {
+          targetTx = txList.find(t => t.id === parsedIntent.targetTransactionId) || null;
+        }
+
+        // 2. Keyword match against transaction description (e.g. user said "lunch", match "Lunch")
+        if (!targetTx) {
+          const searchTerms = [
+            parsedIntent.targetKeyword,
+            parsedIntent.newDescription,
+          ].filter(Boolean).map(s => s!.toLowerCase());
+
+          // Also check words from the message
+          const rawWords = message
+            .toLowerCase()
+            .replace(/[^\w\s]/g, '')
+            .split(/\s+/)
+            .filter(w => w.length >= 3 && !['bad', 'the', 'was', 'for', 'not', 'and', 'that', 'this', 'actually'].includes(w));
+          searchTerms.push(...rawWords);
+
+          for (const term of searchTerms) {
+            targetTx = txList.find(t => t.description.toLowerCase().includes(term)) || null;
+            if (targetTx) break;
+          }
+        }
+
+        // 3. Fallback: most recent transaction (index 0, since transactions are sorted newest first)
+        if (!targetTx && txList.length > 0) {
+          targetTx = txList[0];
+        }
+
+        if (targetTx) {
           const payload: ProposedUpdatePayload = {
-            targetTransactionId: recentTx.id,
-            originalAmountPaise: recentTx.amountPaise,
-            newAmountPaise: result.intent.newAmountPaise,
-            originalDescription: recentTx.description,
-            newDescription: result.intent.newDescription,
+            targetTransactionId: targetTx.id,
+            originalAmountPaise: targetTx.amountPaise,
+            newAmountPaise: parsedIntent.newAmountPaise,
+            originalDescription: targetTx.description,
+            newDescription: parsedIntent.newDescription,
           };
           actionProposal = {
             id: proposalId,
@@ -107,9 +143,12 @@ export async function POST(req: NextRequest) {
       }
 
       case 'undo_transaction': {
-        const recentTx = context.recentTransactions && context.recentTransactions.length > 0
-          ? context.recentTransactions[context.recentTransactions.length - 1]
-          : null;
+        const txList = context.recentTransactions && context.recentTransactions.length > 0
+          ? context.recentTransactions
+          : [];
+
+        // Pick newest transaction to undo
+        const recentTx = txList.length > 0 ? txList[0] : null;
 
         if (recentTx) {
           const payload: ProposedDeletePayload = {
@@ -133,8 +172,8 @@ export async function POST(req: NextRequest) {
           type: 'answer_query',
           status: 'confirmed',
           payload: {
-            queryType: result.intent.queryType,
-            targetAmountPaise: result.intent.targetAmountPaise,
+            queryType: parsedIntent.queryType,
+            targetAmountPaise: parsedIntent.targetAmountPaise,
             directAnswer: result.conversationalReply,
           },
         };

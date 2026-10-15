@@ -108,6 +108,20 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
     setInputValue('');
     setIsLoading(true);
 
+    // Prepare recent transactions sorted newest first
+    const sortedRecent = [...transactions]
+      .sort((a, b) => (b.createdAt || b.transactionDate).localeCompare(a.createdAt || a.transactionDate))
+      .slice(0, 10);
+
+    // Extract recent conversation turns for contextual follow-up questions
+    const chatHistory = messages
+      .filter(m => m.id !== 'msg-welcome' && m.content)
+      .slice(-6)
+      .map(m => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      }));
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -117,9 +131,10 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
           context: {
             cycle,
             forecast,
-            recentTransactions: transactions.slice(-5),
+            recentTransactions: sortedRecent,
             categories,
             todayISO,
+            chatHistory,
           },
         }),
       });
@@ -276,18 +291,28 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-slate-900 text-sm">Money Survival AI</h3>
                 {activeEngine?.provider === 'groq' ? (
-                  <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1" title={`Inference via Groq Cloud (${activeEngine.model || 'qwen3.8-27b'})`}>
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300"
+                    title={`Groq AI (${activeEngine.model?.replace('qwen/', '') || 'qwen3.8-27b'})`}
+                    aria-label={`Groq AI (${activeEngine.model?.replace('qwen/', '') || 'qwen3.8-27b'})`}
+                  >
                     <Sparkles className="h-3 w-3 text-emerald-600" />
-                    Groq LLM
                   </span>
                 ) : activeEngine?.provider === 'fallback' ? (
-                  <span className="rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1" title="Offline deterministic regex engine active">
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-700 border border-amber-300"
+                    title="Offline Deterministic Engine"
+                    aria-label="Offline Deterministic Engine"
+                  >
                     <Cpu className="h-3 w-3 text-amber-600" />
-                    Offline Engine
                   </span>
                 ) : (
-                  <span className="rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 text-[10px] font-medium">
-                    Ready
+                  <span
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500 border border-slate-200"
+                    title="Ready"
+                    aria-label="Ready"
+                  >
+                    <Sparkles className="h-3 w-3 text-slate-400" />
                   </span>
                 )}
               </div>
@@ -343,23 +368,32 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 </div>
 
-                {/* Engine Source Badge for Assistant Replies */}
+                {/* Engine Source Icon for Assistant Replies */}
                 {msg.role === 'assistant' && msg.id !== 'msg-welcome' && (
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1 px-1">
+                  <div className="flex items-center gap-1.5 mt-1 px-1">
                     {msg.providerUsed === 'groq' ? (
-                      <span className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
-                        <Sparkles className="h-2.5 w-2.5 text-emerald-500" />
-                        Groq AI ({msg.modelName?.replace('qwen/', '') || 'qwen3.8-27b'})
+                      <span
+                        className="inline-flex items-center justify-center text-emerald-600 hover:text-emerald-700 transition-colors"
+                        title={`Groq AI (${msg.modelName?.replace('qwen/', '') || 'qwen3.8-27b'})`}
+                        aria-label={`Groq AI (${msg.modelName?.replace('qwen/', '') || 'qwen3.8-27b'})`}
+                      >
+                        <Sparkles className="h-3 w-3" />
                       </span>
                     ) : (
-                      <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
-                        <Cpu className="h-2.5 w-2.5 text-slate-400" />
-                        Offline Regex Engine
+                      <span
+                        className="inline-flex items-center justify-center text-slate-400 hover:text-slate-500 transition-colors"
+                        title="Offline Deterministic Engine"
+                        aria-label="Offline Deterministic Engine"
+                      >
+                        <Cpu className="h-3 w-3" />
                       </span>
                     )}
 
                     {msg.debugNote && (
-                      <span className="text-[10px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.2 border border-amber-200">
+                      <span
+                        className="text-[10px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.2 border border-amber-200"
+                        title={msg.debugNote}
+                      >
                         {msg.debugNote}
                       </span>
                     )}

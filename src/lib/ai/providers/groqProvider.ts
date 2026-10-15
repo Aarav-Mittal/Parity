@@ -49,11 +49,18 @@ ${categories.map(c => `- ${c.id}: "${c.name}"`).join('\n')}
 - Safe Daily Spending Limit: ${forecast ? `${formatRupees(forecast.safeDailySpendPaise)}/day` : 'Unknown'}
 - Recent Daily Velocity: ${forecast ? `${formatRupees(forecast.recentDailySpendPaise)}/day` : 'Unknown'}
 - Survival Status: ${forecast?.status || 'Unknown'}
-- Recent Transactions: ${recentTx.slice(-3).map(t => `${t.description} (${formatRupees(t.amountPaise)})`).join(', ') || 'None'}
+- Recent Transactions in Ledger (Newest First):
+${recentTx.map(t => `- ID "${t.id}": "${t.description}" (${formatRupees(t.amountPaise)} on ${t.transactionDate})`).join('\n') || 'None'}
 
 ### MULTI-EXPENSE LOGGING (VERY IMPORTANT):
 If the user mentions MULTIPLE expenses in a single message (e.g. "spent 20 on a samosa, then 40 on snacks and another 40 for coke" or "auto 50, lunch 120, chai 20"), you MUST extract EVERY SINGLE ITEM into the "transactions" array!
 Do NOT lump multiple expenses into one item.
+
+### CORRECTION & UNDO HANDLING:
+If the user is correcting or modifying a previous expense (e.g. "my bad, the lunch was 350", "actually chai was 40 not 30", "wrong amount for auto"):
+1. Identify the intended transaction from "Recent Transactions in Ledger" by keyword match (e.g. "lunch" matches "Lunch") or prior amount or recency.
+2. Output its ID in "targetTransactionId", and the matching word in "targetKeyword".
+3. Provide "newAmountPaise" (e.g. 35000 for ₹350) and/or "newDescription".
 
 ### Output JSON Schema:
 You MUST output ONLY a valid JSON object with this exact structure:
@@ -75,6 +82,8 @@ You MUST output ONLY a valid JSON object with this exact structure:
   },
   "correction": {
     "target": "last",
+    "targetTransactionId": "tx-id-here-if-known",
+    "targetKeyword": "lunch",
     "newAmountPaise": 15000,
     "newDescription": "Lunch"
   },
@@ -85,8 +94,24 @@ You MUST output ONLY a valid JSON object with this exact structure:
   "conversationalReply": "Concise 1-2 sentence response explaining what was drafted or answering their budget query using real numbers."
 }`;
 
-      // Helper function to call Groq API with a specified model
+      // Helper function to call Groq API with conversation history
       const callGroq = async (modelToUse: string) => {
+        const conversationMessages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+          { role: 'system', content: systemPrompt },
+        ];
+
+        // Maintain conversation history for contextual follow-up questions
+        if (context.chatHistory && context.chatHistory.length > 0) {
+          for (const turn of context.chatHistory) {
+            if (turn.role === 'user' || turn.role === 'assistant') {
+              conversationMessages.push({ role: turn.role, content: turn.content });
+            }
+          }
+        }
+
+        // Add current user message
+        conversationMessages.push({ role: 'user', content: message });
+
         return fetch(GROQ_API_URL, {
           method: 'POST',
           headers: {
@@ -95,10 +120,7 @@ You MUST output ONLY a valid JSON object with this exact structure:
           },
           body: JSON.stringify({
             model: modelToUse,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: message },
-            ],
+            messages: conversationMessages,
             response_format: { type: 'json_object' },
             temperature: 0.1,
             max_tokens: 800,
@@ -178,6 +200,8 @@ You MUST output ONLY a valid JSON object with this exact structure:
         finalIntent = {
           intent: 'correct_transaction',
           target: 'last',
+          targetTransactionId: parsed.correction?.targetTransactionId || undefined,
+          targetKeyword: parsed.correction?.targetKeyword || undefined,
           newAmountPaise: Number(parsed.correction?.newAmountPaise || parsed.newAmountPaise) || undefined,
           newDescription: parsed.correction?.newDescription || undefined,
           confidence: 0.95,

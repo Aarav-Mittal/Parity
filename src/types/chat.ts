@@ -44,6 +44,8 @@ export interface ParsedIncomeIntent extends BaseParsedIntent {
 export interface ParsedCorrectionIntent extends BaseParsedIntent {
   intent: 'correct_transaction';
   target: 'last' | string;
+  targetTransactionId?: string;
+  targetKeyword?: string;
   newAmountPaise?: number;
   newDescription?: string;
 }

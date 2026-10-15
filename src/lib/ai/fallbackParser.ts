@@ -185,11 +185,15 @@ export function parseNaturalLanguageInput(rawInput: string): ParsedFinancialInte
   }
 
   // 2. Correction Intent
-  // e.g. "actually lunch was 150 not 180", "it was 150 not 180", "correct to 150", "change that to 150"
-  const hasCorrectionKeyword = /\b(actually|correction|change\s+to|change\s+that\s+to|correct\s+to|make\s+it)\b/i.test(lower) ||
+  // e.g. "actually lunch was 150 not 180", "my bad, the lunch was 350", "it was 150 not 180", "correct to 150", "change that to 150"
+  const hasCorrectionKeyword = /\b(actually|correction|change\s+to|change\s+that\s+to|correct\s+to|make\s+it|my\s+bad|wrong|mistake|sorry|oops)\b/i.test(lower) ||
                                /\b(?:not|instead\s+of)\s+(?:₹|rs\.?)?\s*\d+/i.test(lower);
 
   if (hasCorrectionKeyword) {
+    // Extract target keyword if mentioned (e.g. "lunch", "auto", "chai", "dinner", "breakfast", etc.)
+    const commonKeywords = ['lunch', 'chai', 'auto', 'dinner', 'breakfast', 'canteen', 'samosa', 'snacks', 'coffee', 'metro', 'bus', 'rent', 'wifi', 'recharge', 'notes', 'groceries'];
+    const foundKeyword = commonKeywords.find(kw => lower.includes(kw));
+
     // Check for "X not Y" or "X instead of Y"
     const notMatch = lower.match(/(?:(?:₹|rs\.?)?\s*)(\d+(?:\.\d+)?)\s*(?:not|instead\s+of)\s*(?:(?:₹|rs\.?)?\s*)\d+/i);
     if (notMatch) {
@@ -198,6 +202,7 @@ export function parseNaturalLanguageInput(rawInput: string): ParsedFinancialInte
         return {
           intent: 'correct_transaction',
           target: 'last',
+          targetKeyword: foundKeyword,
           newAmountPaise: Math.round(correctVal * 100),
           confidence: 0.95,
           rawInput,
@@ -211,6 +216,7 @@ export function parseNaturalLanguageInput(rawInput: string): ParsedFinancialInte
       return {
         intent: 'correct_transaction',
         target: 'last',
+        targetKeyword: foundKeyword,
         newAmountPaise: amountExtract.amountPaise,
         confidence: 0.9,
         rawInput,

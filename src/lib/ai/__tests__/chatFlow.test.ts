@@ -150,4 +150,54 @@ describe('Checkpoint 3.4: End-to-End Chat Action Flow (Undo, Correction & Batch)
     const afterBatchBalance = calculateLedgerBalance(ARYAN_CYCLE.openingBalancePaise, currentTransactions);
     expect(afterBatchBalance).toBe(initialBalance - 10000);
   });
+
+  it('5. Targeted Correction Flow: correctly targets named transaction ("my bad, the lunch was 350") instead of unrelated previous transactions', async () => {
+    // Current transactions has Lunch (₹450) freshly logged at index 0, followed by older transactions
+    const lunchTx: Transaction = {
+      id: 'tx-lunch-recent',
+      userId: ARYAN_CYCLE.userId,
+      type: 'expense',
+      amountPaise: 45000,
+      description: 'Lunch',
+      categoryId: 'cat-food',
+      transactionDate: '2026-10-15',
+      createdAt: '2026-10-15T13:00:00Z',
+    };
+    let currentTransactions: Transaction[] = [lunchTx, ...ARYAN_TRANSACTIONS];
+
+    // User sends correction with "my bad, the lunch was 350"
+    const parseResult = await provider.parseMessage('my bad, the lunch was 350', {
+      cycle: ARYAN_CYCLE,
+      recentTransactions: currentTransactions,
+      categories: DEFAULT_CATEGORIES,
+      todayISO: '2026-10-15',
+      chatHistory: [
+        { role: 'user', content: 'lunch 450' },
+        { role: 'assistant', content: 'Logged ₹450 for lunch.' },
+      ],
+    });
+
+    const parsedIntent = parseResult.intent;
+    expect(parsedIntent.intent).toBe('correct_transaction');
+    if (parsedIntent.intent !== 'correct_transaction') return;
+    expect(parsedIntent.newAmountPaise).toBe(35000);
+    expect(parsedIntent.targetKeyword).toBe('lunch');
+
+    // Matching logic: match against 'lunch' keyword
+    const matchedTx = currentTransactions.find(t =>
+      t.description.toLowerCase().includes(parsedIntent.targetKeyword || '')
+    );
+
+    expect(matchedTx).toBeDefined();
+    expect(matchedTx?.id).toBe('tx-lunch-recent'); // Targets Lunch (₹450), NOT Chai & Snacks!
+    expect(matchedTx?.amountPaise).toBe(45000);
+
+    // Apply update to the matched transaction
+    currentTransactions = currentTransactions.map(t =>
+      t.id === matchedTx?.id ? { ...t, amountPaise: 35000 } : t
+    );
+    expect(currentTransactions.find(t => t.id === 'tx-lunch-recent')?.amountPaise).toBe(35000);
+    // Verify older transactions (e.g. Chai & Snacks tx-6) remain completely untouched
+    expect(currentTransactions.find(t => t.id === 'tx-6')?.amountPaise).toBe(25000);
+  });
 });

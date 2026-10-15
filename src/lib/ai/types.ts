@@ -1,12 +1,18 @@
 import { AllowanceCycle, Category, ForecastResult, Transaction } from '@/types/finance';
 import { ParsedFinancialIntent } from '@/types/chat';
 
+export interface ChatHistoryTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 export interface AiProviderContext {
   cycle?: AllowanceCycle;
   forecast?: ForecastResult;
   recentTransactions?: Transaction[];
   categories?: Category[];
   todayISO?: string;
+  chatHistory?: ChatHistoryTurn[];
 }
 
 export interface AiParseResult {
