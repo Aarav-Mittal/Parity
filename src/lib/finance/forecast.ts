@@ -111,9 +111,13 @@ export function calculateSpendingVelocity(
   todayISO: string,
   defaultSafeDailyPaise: number
 ): { velocityPaise: number; isDataSufficient: boolean } {
-  // Filter cycle expenses that occurred up to today
+  // Filter variable cycle expenses that occurred up to today.
+  // We explicitly exclude fixed recurring bill payments (e.g. room rent) so they do not artificially distort daily variable velocity!
   const cycleExpenses = transactions.filter(
-    tx => tx.type === 'expense' && tx.transactionDate >= cycleStartISO && tx.transactionDate <= todayISO
+    tx => tx.type === 'expense' && 
+          tx.transactionDate >= cycleStartISO && 
+          tx.transactionDate <= todayISO &&
+          !tx.recurringExpenseId
   );
 
   const daysElapsed = Math.max(1, getDaysDifference(cycleStartISO, todayISO) + 1);
@@ -232,8 +236,25 @@ export function calculateForecast(input: ForecastInput): ForecastResult {
   const formattedReserve = formatPaiseToINR(targetReservePaise);
   const formattedEndBalance = formatPaiseToINR(projectedEndBalancePaise);
   const formattedCommitted = formatPaiseToINR(totalCommittedPaise);
+  const formattedCurrentBalance = formatPaiseToINR(currentBalancePaise);
 
-  if (projectedRunOutDate) {
+  const isPassedCycle = todayISO > cycle.nextPayoutDate;
+  const isZeroDays = daysRemaining === 0;
+
+  if (currentBalancePaise <= 0) {
+    status = 'danger';
+    projectedRunOutDate = todayISO;
+    statusHeadline = 'Balance in deficit';
+    statusMessage = `Your current balance is ${formattedCurrentBalance}. You have run out of available funds. Any emergency spending should be kept to a minimum until your next allowance.`;
+  } else if (isPassedCycle) {
+    status = 'safe';
+    statusHeadline = 'Cycle completed';
+    statusMessage = `Your allowance date of ${cycle.nextPayoutDate} has arrived. Start or confirm your new allowance cycle to continue tracking.`;
+  } else if (isZeroDays) {
+    status = 'safe';
+    statusHeadline = 'Allowance payout day!';
+    statusMessage = `Today is your allowance day! You have ${formattedCurrentBalance} remaining from this cycle.`;
+  } else if (projectedRunOutDate) {
     status = 'danger';
     const daysUntilRunOut = getDaysDifference(todayISO, projectedRunOutDate);
     const daysShort = daysRemaining - daysUntilRunOut;

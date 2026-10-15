@@ -39,6 +39,8 @@ export interface Transaction {
   isCorrection?: boolean;
   /** Pointer to original transaction if this is a correction */
   correctedFromId?: string | null;
+  /** Pointer to scheduled recurring expense if this transaction represents a recurring bill payment */
+  recurringExpenseId?: string | null;
 }
 
 export interface AllowanceCycle {

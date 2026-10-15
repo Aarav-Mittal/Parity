@@ -44,22 +44,7 @@ CREATE TABLE IF NOT EXISTS public.categories (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 4. Transactions (The Immutable Ledger)
-CREATE TABLE IF NOT EXISTS public.transactions (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
-    type TEXT NOT NULL CHECK (type IN ('expense', 'income', 'refund')),
-    amount_paise BIGINT NOT NULL CHECK (amount_paise > 0),
-    description TEXT NOT NULL,
-    transaction_date DATE NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    raw_input TEXT,
-    is_correction BOOLEAN NOT NULL DEFAULT FALSE,
-    corrected_from_id UUID REFERENCES public.transactions(id) ON DELETE SET NULL
-);
-
--- 5. Recurring Expenses (Scheduled obligations)
+-- 4. Recurring Expenses (Scheduled obligations)
 CREATE TABLE IF NOT EXISTS public.recurring_expenses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
@@ -72,6 +57,22 @@ CREATE TABLE IF NOT EXISTS public.recurring_expenses (
     is_paused BOOLEAN NOT NULL DEFAULT FALSE,
     last_paid_date DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 5. Transactions (The Immutable Ledger)
+CREATE TABLE IF NOT EXISTS public.transactions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    category_id UUID REFERENCES public.categories(id) ON DELETE SET NULL,
+    recurring_expense_id UUID REFERENCES public.recurring_expenses(id) ON DELETE SET NULL,
+    type TEXT NOT NULL CHECK (type IN ('expense', 'income', 'refund')),
+    amount_paise BIGINT NOT NULL CHECK (amount_paise > 0),
+    description TEXT NOT NULL,
+    transaction_date DATE NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    raw_input TEXT,
+    is_correction BOOLEAN NOT NULL DEFAULT FALSE,
+    corrected_from_id UUID REFERENCES public.transactions(id) ON DELETE SET NULL
 );
 
 -- ==============================================================================
