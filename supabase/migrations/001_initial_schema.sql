@@ -72,7 +72,8 @@ CREATE TABLE IF NOT EXISTS public.transactions (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     raw_input TEXT,
     is_correction BOOLEAN NOT NULL DEFAULT FALSE,
-    corrected_from_id UUID REFERENCES public.transactions(id) ON DELETE SET NULL
+    corrected_from_id UUID REFERENCES public.transactions(id) ON DELETE SET NULL,
+    is_one_off BOOLEAN NOT NULL DEFAULT FALSE
 );
 
 -- ==============================================================================
