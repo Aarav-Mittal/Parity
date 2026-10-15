@@ -593,5 +593,111 @@ describe('Deterministic Forecasting Engine', () => {
       // Safe daily spend increases accordingly
       expect(forecastAfter.safeDailySpendPaise).toBeGreaterThan(forecastBefore.safeDailySpendPaise);
     });
+
+    it('6. Auto-detects an unlabelled ₹1,800 capital purchase in student persona, preventing velocity inflation', () => {
+      const today = '2026-10-15';
+      const cycle: AllowanceCycle = {
+        id: 'cycle-oct-2026',
+        userId: 'aryan-123',
+        allowanceAmountPaise: 800000, // ₹8,000
+        cycleDayOfMonth: 1,
+        currentCycleStart: '2026-10-01',
+        nextPayoutDate: '2026-11-01',
+        openingBalancePaise: 800000,
+        targetReservePaise: 50000, // ₹500
+        isActive: true,
+      };
+
+      // Standard recurring commitments
+      const recurring: RecurringExpense[] = [
+        {
+          id: 'rec-rent',
+          userId: 'aryan-123',
+          name: 'Room Rent',
+          amountPaise: 250000,
+          frequency: 'monthly',
+          dueDayOfMonth: 5,
+          nextDueDate: '2026-11-05',
+          isPaused: false,
+          lastPaidDate: '2026-10-05',
+        },
+        {
+          id: 'rec-wifi',
+          userId: 'aryan-123',
+          name: 'Hostel Wi-Fi',
+          amountPaise: 49900,
+          frequency: 'monthly',
+          dueDayOfMonth: 10,
+          nextDueDate: '2026-11-10',
+          isPaused: false,
+          lastPaidDate: '2026-10-10',
+        },
+        {
+          id: 'rec-recharge',
+          userId: 'aryan-123',
+          name: 'Mobile Recharge',
+          amountPaise: 29900,
+          frequency: 'monthly',
+          dueDayOfMonth: 20,
+          nextDueDate: '2026-10-20',
+          isPaused: false,
+          lastPaidDate: null,
+        },
+      ];
+
+      // Normal daily student transactions (auto, lunch, stationery, chai ~₹120-250)
+      const baseTransactions: Transaction[] = [
+        { id: 'tx-1', userId: 'aryan-123', type: 'expense', amountPaise: 250000, description: 'Room Rent', transactionDate: '2026-10-05', createdAt: '2026-10-05T10:00:00Z', recurringExpenseId: 'rec-rent' },
+        { id: 'tx-2', userId: 'aryan-123', type: 'expense', amountPaise: 49900, description: 'Hostel Wi-Fi', transactionDate: '2026-10-10', createdAt: '2026-10-10T11:00:00Z', recurringExpenseId: 'rec-wifi' },
+        { id: 'tx-3', userId: 'aryan-123', type: 'expense', amountPaise: 12000, description: 'Auto to North Campus', transactionDate: '2026-10-12', createdAt: '2026-10-12T09:30:00Z' },
+        { id: 'tx-4', userId: 'aryan-123', type: 'expense', amountPaise: 18000, description: 'Lunch at College Canteen', transactionDate: '2026-10-13', createdAt: '2026-10-13T13:15:00Z' },
+        { id: 'tx-5', userId: 'aryan-123', type: 'expense', amountPaise: 25000, description: 'Photocopying & Notes', transactionDate: '2026-10-14', createdAt: '2026-10-14T15:45:00Z' },
+        { id: 'tx-6', userId: 'aryan-123', type: 'expense', amountPaise: 25000, description: 'Chai & Snacks', transactionDate: '2026-10-14', createdAt: '2026-10-14T18:00:00Z' },
+      ];
+
+      const forecastBefore = calculateForecast({
+        todayISO: today,
+        cycle,
+        transactions: baseTransactions,
+        recurringExpenses: recurring,
+      });
+
+      // Daily velocity before the large purchase is around ~₹96/day (9571 paise)
+      expect(forecastBefore.recentDailySpendPaise).toBeLessThan(11000);
+
+      // Student logs a ₹1,800 transaction WITHOUT marking isOneOff: true
+      const transactionsWithUnlabelledBigSpend: Transaction[] = [
+        ...baseTransactions,
+        {
+          id: 'tx-7',
+          userId: 'aryan-123',
+          type: 'expense',
+          amountPaise: 180000, // ₹1,800 (shopping, shoes, or emergency repair)
+          description: 'Winter Jacket & Shoes',
+          transactionDate: '2026-10-15',
+          createdAt: '2026-10-15T16:00:00Z',
+          // isOneOff is deliberately omitted / false!
+        },
+      ];
+
+      const forecastAfter = calculateForecast({
+        todayISO: today,
+        cycle,
+        transactions: transactionsWithUnlabelledBigSpend,
+        recurringExpenses: recurring,
+      });
+
+      // 1. Balance correctly reflects the actual money spent:
+      // ₹4,201 - ₹1,800 = ₹2,401 (240100 paise)
+      expect(forecastAfter.currentBalancePaise).toBe(240100);
+
+      // 2. The calculator automatically identifies the ₹1,800 transaction as an isolated capital one-off:
+      expect(forecastAfter.oneOffExpensesPaise).toBe(180000);
+
+      // 3. CRITICAL: The projected daily living velocity did NOT spike to ₹136/day!
+      // It stays anchored around ~₹96/day based on normal daily living meals and transport.
+      expect(forecastAfter.recentDailySpendPaise).toBeLessThan(11000);
+      expect(forecastAfter.recentDailySpendPaise).toBeCloseTo(forecastBefore.recentDailySpendPaise, -2);
+    });
   });
 });

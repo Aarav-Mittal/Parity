@@ -161,30 +161,56 @@ export function calculateSpendingVelocity(
 
   const daysElapsed = Math.max(1, getDaysDifference(cycleStartISO, todayISO) + 1);
 
-  // 1. Separate explicitly marked one-off expenses
+  // 1. Separate explicitly marked one-off expenses OR automatically detect large capital transactions
   let explicitOneOffTotalPaise = 0;
+  let autoDetectedOneOffPaise = 0;
   const candidateLivingExpenses: Transaction[] = [];
+
+  // Determine a baseline for normal everyday transactions (e.g. meals, transport, snacks)
+  const nonOneOffTx = variableExpenses.filter(tx => !tx.isOneOff);
+  const normalTxAmounts = nonOneOffTx
+    .map(tx => tx.amountPaise)
+    .filter(amt => amt <= Math.max(3.0 * defaultSafeDailyPaise, 60000)); // <= ₹600 or 3x safe daily
+  const typicalTxMedian = normalTxAmounts.length > 0 
+    ? calculateMedian(normalTxAmounts) 
+    : Math.max(defaultSafeDailyPaise, 15000);
 
   for (const tx of variableExpenses) {
     if (tx.isOneOff) {
       explicitOneOffTotalPaise += tx.amountPaise;
+      continue;
+    }
+
+    // Auto-detect large single transactions (e.g. ₹1,800 textbook, ₹2,500 shoes, ₹3,000 phone repair)
+    // A single transaction is auto-detected as an isolated capital one-off if:
+    // - It is >= ₹1,000 (100,000 paise)
+    // - AND it is >= 3.0x typical transaction median
+    // - AND it is >= 2.0x recommended safe daily spend
+    const isCapitalSpike = tx.amountPaise >= 100000 && 
+                          tx.amountPaise >= 3.0 * typicalTxMedian && 
+                          tx.amountPaise >= 2.0 * defaultSafeDailyPaise;
+
+    if (isCapitalSpike) {
+      autoDetectedOneOffPaise += tx.amountPaise;
     } else {
       candidateLivingExpenses.push(tx);
     }
   }
+
+  const initialOneOffTotal = explicitOneOffTotalPaise + autoDetectedOneOffPaise;
 
   // Cold start guard: if fewer than 3 days have elapsed or fewer than 2 living expenses recorded
   if (daysElapsed < 3 || candidateLivingExpenses.length < 2) {
     return {
       velocityPaise: defaultSafeDailyPaise,
       isDataSufficient: false,
-      oneOffExpensesPaise: explicitOneOffTotalPaise,
+      oneOffExpensesPaise: initialOneOffTotal,
       livingExpensesPaise: candidateLivingExpenses.reduce((sum, tx) => sum + tx.amountPaise, 0),
-      outlierCount: variableExpenses.filter(tx => tx.isOneOff).length,
+      outlierCount: variableExpenses.filter(tx => tx.isOneOff).length + (autoDetectedOneOffPaise > 0 ? 1 : 0),
     };
   }
 
-  // 2. Aggregate candidate daily spending by date
+  // 2. Aggregate remaining candidate daily spending by date
   const dailySpendMap = new Map<string, number>();
   for (const tx of candidateLivingExpenses) {
     const current = dailySpendMap.get(tx.transactionDate) || 0;
@@ -195,13 +221,8 @@ export function calculateSpendingVelocity(
   const activeDailySpends = Array.from(dailySpendMap.values()).filter(s => s > 0);
   const medianActiveSpend = calculateMedian(activeDailySpends);
 
-  // 3. Statistical Outlier Detection on daily aggregates
-  // A spend is an isolated one-off outlier if:
-  // - It is substantially larger than median active daily spend (> 3.5x)
-  // - AND it is substantially larger than recommended safe daily spend (> 2.0x)
-  // - AND it is NOT a recurring weekend habit (i.e. not repeating weekly)
-  let statisticalOneOffTotalPaise = 0;
-  let outlierCount = variableExpenses.filter(tx => tx.isOneOff).length;
+  // 3. Statistical Outlier Detection on daily aggregates (for clusters of smaller purchases on one day)
+  let statisticalClusterExcessPaise = 0;
   const livingDailySpendMap = new Map<string, number>();
 
   for (const [dateISO, dailyTotal] of dailySpendMap.entries()) {
@@ -212,17 +233,19 @@ export function calculateSpendingVelocity(
                     dailyTotal > 2.0 * defaultSafeDailyPaise;
 
     if (isSpike) {
-      // Treat the excess over typical daily spend as a one-off capital purchase
+      // Treat the excess over typical daily spend as a one-off cluster purchase
       const excess = dailyTotal - medianActiveSpend;
-      statisticalOneOffTotalPaise += excess;
+      statisticalClusterExcessPaise += excess;
       livingDailySpendMap.set(dateISO, medianActiveSpend);
-      outlierCount += 1;
     } else {
       livingDailySpendMap.set(dateISO, dailyTotal);
     }
   }
 
-  const totalOneOffPaise = explicitOneOffTotalPaise + statisticalOneOffTotalPaise;
+  const totalOneOffPaise = initialOneOffTotal + statisticalClusterExcessPaise;
+  const outlierCount = variableExpenses.filter(tx => tx.isOneOff).length + 
+                       (autoDetectedOneOffPaise > 0 ? 1 : 0) + 
+                       (statisticalClusterExcessPaise > 0 ? 1 : 0);
   const livingDailyTotals = Array.from(livingDailySpendMap.values());
   const totalLivingExpensePaise = livingDailyTotals.reduce((sum, s) => sum + s, 0);
 

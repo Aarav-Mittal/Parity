@@ -43,11 +43,20 @@ export function TransactionLedger({ onOpenAddModal }: { onOpenAddModal: () => vo
     return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
   }, [filtered]);
 
+  const [editIsOneOff, setEditIsOneOff] = useState(false);
+
   const startEdit = (tx: Transaction) => {
     setEditingTx(tx);
     setEditDesc(tx.description);
     setEditAmount((tx.amountPaise / 100).toString());
     setEditCategory(tx.categoryId || '');
+    setEditIsOneOff(Boolean(tx.isOneOff));
+  };
+
+  const toggleOneOff = (tx: Transaction) => {
+    editTransaction(tx.id, {
+      isOneOff: !tx.isOneOff,
+    });
   };
 
   const saveEdit = (e: React.FormEvent) => {
@@ -58,6 +67,7 @@ export function TransactionLedger({ onOpenAddModal }: { onOpenAddModal: () => vo
       description: editDesc,
       amountPaise: rupeesToPaise(parseFloat(editAmount) || 0),
       categoryId: editCategory || null,
+      isOneOff: editIsOneOff,
       isCorrection: true,
     });
     setEditingTx(null);
@@ -149,10 +159,23 @@ export function TransactionLedger({ onOpenAddModal }: { onOpenAddModal: () => vo
                                 <span className="text-sm font-semibold text-slate-900">
                                   {tx.description}
                                 </span>
-                                {tx.isOneOff && (
-                                  <span className="rounded-full bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.2 text-[10px] font-medium">
-                                    One-off
-                                  </span>
+                                {isExpense && !tx.recurringExpenseId && (
+                                  <button
+                                    type="button"
+                                    onClick={() => toggleOneOff(tx)}
+                                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer ${
+                                      tx.isOneOff
+                                        ? 'bg-purple-100 text-purple-800 border border-purple-300 hover:bg-purple-200'
+                                        : 'bg-slate-100 text-slate-500 border border-slate-200 hover:bg-purple-50 hover:text-purple-700 hover:border-purple-200'
+                                    }`}
+                                    title={
+                                      tx.isOneOff
+                                        ? 'Marked as one-off purchase. Click to change to regular daily expense.'
+                                        : 'Click to mark as one-off purchase'
+                                    }
+                                  >
+                                    {tx.isOneOff ? 'One-off ✓' : '+ One-off'}
+                                  </button>
                                 )}
                                 {tx.recurringExpenseId && (
                                   <span className="rounded-full bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.2 text-[10px] font-medium">
@@ -253,6 +276,24 @@ export function TransactionLedger({ onOpenAddModal }: { onOpenAddModal: () => vo
                 ))}
               </select>
             </div>
+
+            {editingTx.type === 'expense' && !editingTx.recurringExpenseId && (
+              <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3 cursor-pointer text-xs">
+                <input
+                  type="checkbox"
+                  checked={editIsOneOff}
+                  onChange={e => setEditIsOneOff(e.target.checked)}
+                  className="mt-0.5 rounded text-slate-900 focus:ring-slate-900"
+                />
+                <div>
+                  <span className="font-semibold text-slate-800">One-off / irregular purchase</span>
+                  <p className="text-slate-500 mt-0.5">
+                    Separates this transaction from your daily living burn rate so it doesn't inflate your projected daily expenses.
+                  </p>
+                </div>
+              </label>
+            )}
+
             <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
               <Button type="button" variant="ghost" onClick={() => setEditingTx(null)}>
                 Cancel
