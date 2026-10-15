@@ -35,6 +35,13 @@ export function formatISODate(date: Date): string {
 }
 
 /**
+ * Returns today's date formatted as YYYY-MM-DD in UTC.
+ */
+export function getTodayISO(): string {
+  return formatISODate(new Date());
+}
+
+/**
  * Parses a YYYY-MM-DD string into a UTC Date object.
  */
 export function parseISODate(isoDateString: string): Date {

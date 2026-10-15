@@ -46,6 +46,11 @@ export function formatPaiseToINR(
 }
 
 /**
+ * Convenient alias for formatPaiseToINR
+ */
+export const formatRupees = formatPaiseToINR;
+
+/**
  * Parses user input strings like "500", "₹120", "1,250.50", "45 rs" into integer paise.
  * Returns null if input is completely invalid or negative.
  */
