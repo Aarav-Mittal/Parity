@@ -9,6 +9,7 @@ import { AddTransactionModal } from '@/components/transactions/AddTransactionMod
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { ChatDrawer } from '@/components/chat/ChatDrawer';
 import { TransactionType } from '@/types/finance';
 import {
   Wallet,
@@ -34,7 +35,20 @@ export default function Home() {
 
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
   const [addTxDefaultType, setAddTxDefaultType] = useState<TransactionType>('expense');
+
+  // Global keyboard shortcut: Ctrl+K or Cmd+K toggles chat
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsChatOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   const openAddExpense = () => {
     setAddTxDefaultType('expense');
@@ -161,7 +175,7 @@ export default function Home() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => alert("Conversational AI Assistant will be fully connected in Milestone 3!")}
+                  onClick={() => setIsChatOpen(true)}
                   className="border-slate-300"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-slate-500" />
@@ -183,7 +197,21 @@ export default function Home() {
         )}
       </main>
 
-      {/* Modals */}
+      {/* Floating Chat Trigger Button */}
+      {isOnboarded && (
+        <button
+          type="button"
+          onClick={() => setIsChatOpen(true)}
+          title="Open Conversational AI Assistant (Ctrl+K)"
+          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-xl hover:bg-slate-800 transition-all hover:scale-105 cursor-pointer border border-slate-700/50"
+        >
+          <Sparkles className="h-4 w-4 text-emerald-400" />
+          <span>Ask AI / Quick Log</span>
+          <span className="hidden sm:inline-block rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">Ctrl+K</span>
+        </button>
+      )}
+
+      {/* Modals & Drawers */}
       <OnboardingModal
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
@@ -193,6 +221,11 @@ export default function Home() {
         isOpen={isAddTxOpen}
         onClose={() => setIsAddTxOpen(false)}
         defaultType={addTxDefaultType}
+      />
+
+      <ChatDrawer
+        isOpen={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
       />
     </div>
   );
