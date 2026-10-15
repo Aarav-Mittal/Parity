@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { useMoney } from '@/lib/store/MoneyContext';
 import { DashboardHero } from '@/components/dashboard/DashboardHero';
 import { UpcomingBillsCard } from '@/components/dashboard/UpcomingBillsCard';
+import { ContextualAlertsCard } from '@/components/dashboard/ContextualAlertsCard';
+import { CategoryBreakdownCard } from '@/components/dashboard/CategoryBreakdownCard';
 import { TransactionLedger } from '@/components/transactions/TransactionLedger';
 import { AddTransactionModal } from '@/components/transactions/AddTransactionModal';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
@@ -37,6 +39,7 @@ export default function Home() {
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [addTxDefaultType, setAddTxDefaultType] = useState<TransactionType>('expense');
+  const [chatPrefill, setChatPrefill] = useState<string | undefined>(undefined);
 
   // Global keyboard shortcut: Ctrl+K or Cmd+K toggles chat
   React.useEffect(() => {
@@ -58,6 +61,16 @@ export default function Home() {
   const openAddIncome = () => {
     setAddTxDefaultType('income');
     setIsAddTxOpen(true);
+  };
+
+  const handleOpenChatWithPrefill = (prefill?: string) => {
+    setChatPrefill(prefill);
+    setIsChatOpen(true);
+  };
+
+  const handleScrollToBills = () => {
+    const el = document.getElementById('bills-section');
+    el?.scrollIntoView({ behavior: 'smooth' });
   };
 
   return (
@@ -160,6 +173,12 @@ export default function Home() {
             {/* Survival Dashboard Hero */}
             <DashboardHero />
 
+            {/* Contextual Real-time Alerts */}
+            <ContextualAlertsCard
+              onOpenChat={handleOpenChatWithPrefill}
+              onScrollToBills={handleScrollToBills}
+            />
+
             {/* Quick Actions Bar */}
             <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
               <span className="text-xs font-semibold text-slate-600 pl-2">
@@ -184,13 +203,16 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Two-Column Layout: Ledger & Upcoming Commitments */}
+            {/* Two-Column Layout: Ledger & Sidebar */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               <div className="lg:col-span-2">
                 <TransactionLedger onOpenAddModal={openAddExpense} />
               </div>
-              <div className="lg:col-span-1">
-                <UpcomingBillsCard />
+              <div className="lg:col-span-1 space-y-6">
+                <CategoryBreakdownCard />
+                <div id="bills-section">
+                  <UpcomingBillsCard />
+                </div>
               </div>
             </div>
           </div>
@@ -225,7 +247,11 @@ export default function Home() {
 
       <ChatDrawer
         isOpen={isChatOpen}
-        onClose={() => setIsChatOpen(false)}
+        onClose={() => {
+          setIsChatOpen(false);
+          setChatPrefill(undefined);
+        }}
+        initialPrompt={chatPrefill}
       />
     </div>
   );

@@ -24,6 +24,7 @@ import {
 interface ChatDrawerProps {
   isOpen: boolean;
   onClose: () => void;
+  initialPrompt?: string;
 }
 
 const INITIAL_WELCOME_MESSAGE: ChatMessage = {
@@ -40,7 +41,7 @@ const SUGGESTED_PROMPTS = [
   { label: 'Auto 120', query: 'auto 120 to college' },
 ];
 
-export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
+export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) {
   const {
     cycle,
     forecast,
@@ -59,15 +60,18 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Auto-focus input and scroll down when drawer opens
+  // Auto-focus input, prefill if provided, and scroll down when drawer opens
   useEffect(() => {
     if (isOpen) {
+      if (initialPrompt) {
+        setInputValue(initialPrompt);
+      }
       setTimeout(() => {
         inputRef.current?.focus();
         scrollToBottom();
       }, 150);
     }
-  }, [isOpen]);
+  }, [isOpen, initialPrompt]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
