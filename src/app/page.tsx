@@ -6,6 +6,7 @@ import { DashboardHero } from '@/components/dashboard/DashboardHero';
 import { UpcomingBillsCard } from '@/components/dashboard/UpcomingBillsCard';
 import { ContextualAlertsCard } from '@/components/dashboard/ContextualAlertsCard';
 import { CategoryBreakdownCard } from '@/components/dashboard/CategoryBreakdownCard';
+import { WhatIfSimulatorModal } from '@/components/dashboard/WhatIfSimulatorModal';
 import { TransactionLedger } from '@/components/transactions/TransactionLedger';
 import { AddTransactionModal } from '@/components/transactions/AddTransactionModal';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
@@ -22,6 +23,7 @@ import {
   UserCheck,
   CalendarDays,
   ShieldAlert,
+  Calculator,
 } from 'lucide-react';
 
 export default function Home() {
@@ -38,6 +40,7 @@ export default function Home() {
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
   const [addTxDefaultType, setAddTxDefaultType] = useState<TransactionType>('expense');
   const [chatPrefill, setChatPrefill] = useState<string | undefined>(undefined);
 
@@ -177,6 +180,7 @@ export default function Home() {
             <ContextualAlertsCard
               onOpenChat={handleOpenChatWithPrefill}
               onScrollToBills={handleScrollToBills}
+              onOpenSimulator={() => setIsSimulatorOpen(true)}
             />
 
             {/* Quick Actions Bar */}
@@ -190,6 +194,15 @@ export default function Home() {
                 </Button>
                 <Button size="sm" variant="secondary" onClick={openAddIncome}>
                   <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" /> Record Income / Top-up
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setIsSimulatorOpen(true)}
+                  className="border-slate-300"
+                >
+                  <Calculator className="h-3.5 w-3.5 text-indigo-600" />
+                  What-If Simulator
                 </Button>
                 <Button
                   size="sm"
@@ -252,6 +265,11 @@ export default function Home() {
           setChatPrefill(undefined);
         }}
         initialPrompt={chatPrefill}
+      />
+
+      <WhatIfSimulatorModal
+        isOpen={isSimulatorOpen}
+        onClose={() => setIsSimulatorOpen(false)}
       />
     </div>
   );
