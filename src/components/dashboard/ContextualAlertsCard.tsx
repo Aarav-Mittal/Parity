@@ -131,7 +131,8 @@ export function ContextualAlertsCard({
             type="button"
             onClick={() => handleDismiss(alert.id)}
             title="Dismiss alert"
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-black/5 transition-colors cursor-pointer shrink-0"
+            aria-label="Dismiss alert"
+            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-black/5 transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <X className="h-4 w-4" />
           </button>

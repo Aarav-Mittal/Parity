@@ -73,6 +73,17 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
     }
   }, [isOpen, initialPrompt]);
 
+  // Accessibility: close on Escape key
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    if (isOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
@@ -291,7 +302,8 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               type="button"
               onClick={handleClearHistory}
               title="Clear chat history"
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+              aria-label="Clear chat history"
+              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <RotateCcw className="h-4 w-4" />
             </button>
@@ -299,7 +311,8 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               type="button"
               onClick={onClose}
               title="Close drawer"
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+              aria-label="Close chat drawer"
+              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="h-5 w-5" />
             </button>

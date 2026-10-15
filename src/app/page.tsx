@@ -11,8 +11,8 @@ import { TransactionLedger } from '@/components/transactions/TransactionLedger';
 import { AddTransactionModal } from '@/components/transactions/AddTransactionModal';
 import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { Button } from '@/components/ui/Button';
-import { Card } from '@/components/ui/Card';
 import { ChatDrawer } from '@/components/chat/ChatDrawer';
+import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
 import { TransactionType } from '@/types/finance';
 import {
   Wallet,
@@ -76,8 +76,17 @@ export default function Home() {
     el?.scrollIntoView({ behavior: 'smooth' });
   };
 
+  const handleNavigateToSection = (sectionId: string) => {
+    if (sectionId === 'dashboard-top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      const el = document.getElementById(sectionId);
+      el?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-16">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 sm:pb-16">
       {/* Top Navigation */}
       <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
@@ -174,7 +183,9 @@ export default function Home() {
           /* Active Dashboard View */
           <div className="space-y-6">
             {/* Survival Dashboard Hero */}
-            <DashboardHero />
+            <div id="dashboard-top">
+              <DashboardHero />
+            </div>
 
             {/* Contextual Real-time Alerts */}
             <ContextualAlertsCard
@@ -218,7 +229,7 @@ export default function Home() {
 
             {/* Two-Column Layout: Ledger & Sidebar */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-              <div className="lg:col-span-2">
+              <div id="ledger-section" className="lg:col-span-2">
                 <TransactionLedger onOpenAddModal={openAddExpense} />
               </div>
               <div className="lg:col-span-1 space-y-6">
@@ -232,18 +243,28 @@ export default function Home() {
         )}
       </main>
 
-      {/* Floating Chat Trigger Button */}
+      {/* Floating Chat Trigger Button (Desktop Only) */}
       {isOnboarded && (
         <button
           type="button"
           onClick={() => setIsChatOpen(true)}
           title="Open Conversational AI Assistant (Ctrl+K)"
-          className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-xl hover:bg-slate-800 transition-all hover:scale-105 cursor-pointer border border-slate-700/50"
+          aria-label="Open Conversational AI Assistant"
+          className="hidden sm:flex fixed bottom-5 right-5 z-40 items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-xl hover:bg-slate-800 transition-all hover:scale-105 cursor-pointer border border-slate-700/50"
         >
           <Sparkles className="h-4 w-4 text-emerald-400" />
           <span>Ask AI / Quick Log</span>
-          <span className="hidden sm:inline-block rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">Ctrl+K</span>
+          <span className="inline-block rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">Ctrl+K</span>
         </button>
+      )}
+
+      {/* Mobile Bottom Navigation Dock (Phones Only) */}
+      {isOnboarded && (
+        <MobileBottomNav
+          onOpenAddExpense={openAddExpense}
+          onOpenChat={() => setIsChatOpen(true)}
+          onNavigateToSection={handleNavigateToSection}
+        />
       )}
 
       {/* Modals & Drawers */}
