@@ -6,7 +6,7 @@ import {
   DailyProjection,
   SurvivalStatus,
 } from '@/types/finance';
-import { calculateLedgerBalance, filterTransactionsByDateRange } from './ledger';
+import { calculateLedgerBalance, filterTransactionsByDateRange, getEffectiveTransactions } from './ledger';
 import {
   addDaysToDate,
   getDaysDifference,
@@ -102,18 +102,57 @@ export function getUpcomingCommittedBills(
 }
 
 /**
- * Computes the user's spending burn rate / velocity.
- * Handles cold start transparently when fewer than 3 days of data exist.
+ * Calculates the median of an array of numbers.
+ */
+export function calculateMedian(values: number[]): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  if (sorted.length % 2 !== 0) {
+    return sorted[mid];
+  }
+  return Math.round((sorted[mid - 1] + sorted[mid]) / 2);
+}
+
+/**
+ * Checks if a given ISO date (YYYY-MM-DD) falls on a weekend (Saturday or Sunday).
+ */
+export function isWeekend(isoDateString: string): boolean {
+  const date = parseISODate(isoDateString);
+  const day = date.getUTCDay();
+  return day === 0 || day === 6; // 0 = Sunday, 6 = Saturday
+}
+
+export interface SpendingVelocityDetails {
+  velocityPaise: number;
+  isDataSufficient: boolean;
+  oneOffExpensesPaise: number;
+  livingExpensesPaise: number;
+  outlierCount: number;
+}
+
+/**
+ * Computes the user's spending burn rate / velocity with robust outlier and one-off handling.
+ * 
+ * Educational Principles:
+ * 1. Capital / One-Off Expenses (e.g. ₹2,500 semester textbook, laptop repair) are NEVER
+ *    projected as daily recurring habits. They reduce the current ledger balance (money is spent),
+ *    which safely lowers the safe daily spend, but does NOT artificially spike daily living velocity.
+ * 2. Regular Weekend Lifestyle (e.g. ₹350 on Saturday vs ₹120 on weekdays) is a recurring weekly
+ *    pattern, NOT an outlier. A 7-day rolling window naturally captures the 5-weekday + 2-weekend cadence.
+ * 3. Cold Start (< 3 days): Uses conservative safe daily spend and flags isDataSufficient = false.
  */
 export function calculateSpendingVelocity(
   transactions: Transaction[],
   cycleStartISO: string,
   todayISO: string,
   defaultSafeDailyPaise: number
-): { velocityPaise: number; isDataSufficient: boolean } {
-  // Filter variable cycle expenses that occurred up to today.
-  // We explicitly exclude fixed recurring bill payments (e.g. room rent) so they do not artificially distort daily variable velocity!
-  const cycleExpenses = transactions.filter(
+): SpendingVelocityDetails {
+  // Use effective transactions (filters out any superseded corrections)
+  const effective = getEffectiveTransactions(transactions);
+
+  // Filter variable cycle expenses up to today (excluding fixed recurring bills)
+  const variableExpenses = effective.filter(
     tx => tx.type === 'expense' && 
           tx.transactionDate >= cycleStartISO && 
           tx.transactionDate <= todayISO &&
@@ -122,30 +161,106 @@ export function calculateSpendingVelocity(
 
   const daysElapsed = Math.max(1, getDaysDifference(cycleStartISO, todayISO) + 1);
 
-  // If fewer than 3 days have elapsed or fewer than 2 expenses recorded, use conservative safe spend
-  if (daysElapsed < 3 || cycleExpenses.length < 2) {
+  // 1. Separate explicitly marked one-off expenses
+  let explicitOneOffTotalPaise = 0;
+  const candidateLivingExpenses: Transaction[] = [];
+
+  for (const tx of variableExpenses) {
+    if (tx.isOneOff) {
+      explicitOneOffTotalPaise += tx.amountPaise;
+    } else {
+      candidateLivingExpenses.push(tx);
+    }
+  }
+
+  // Cold start guard: if fewer than 3 days have elapsed or fewer than 2 living expenses recorded
+  if (daysElapsed < 3 || candidateLivingExpenses.length < 2) {
     return {
       velocityPaise: defaultSafeDailyPaise,
       isDataSufficient: false,
+      oneOffExpensesPaise: explicitOneOffTotalPaise,
+      livingExpensesPaise: candidateLivingExpenses.reduce((sum, tx) => sum + tx.amountPaise, 0),
+      outlierCount: variableExpenses.filter(tx => tx.isOneOff).length,
     };
   }
 
-  // Calculate full cycle daily average
-  const totalCycleExpensePaise = cycleExpenses.reduce((sum, tx) => sum + tx.amountPaise, 0);
-  const cycleDailyAverage = totalCycleExpensePaise / daysElapsed;
+  // 2. Aggregate candidate daily spending by date
+  const dailySpendMap = new Map<string, number>();
+  for (const tx of candidateLivingExpenses) {
+    const current = dailySpendMap.get(tx.transactionDate) || 0;
+    dailySpendMap.set(tx.transactionDate, current + tx.amountPaise);
+  }
 
-  // Calculate recent 3-day average
-  const threeDaysAgoISO = addDaysToDate(todayISO, -2);
-  const recentExpenses = cycleExpenses.filter(tx => tx.transactionDate >= threeDaysAgoISO);
-  const recentTotalPaise = recentExpenses.reduce((sum, tx) => sum + tx.amountPaise, 0);
-  const recent3DayAverage = recentTotalPaise / 3;
+  // Calculate median active daily spend across days with spending
+  const activeDailySpends = Array.from(dailySpendMap.values()).filter(s => s > 0);
+  const medianActiveSpend = calculateMedian(activeDailySpends);
 
-  // Weighted velocity: 70% recent habits + 30% cycle average
-  const weightedVelocity = Math.round(0.7 * recent3DayAverage + 0.3 * cycleDailyAverage);
+  // 3. Statistical Outlier Detection on daily aggregates
+  // A spend is an isolated one-off outlier if:
+  // - It is substantially larger than median active daily spend (> 3.5x)
+  // - AND it is substantially larger than recommended safe daily spend (> 2.0x)
+  // - AND it is NOT a recurring weekend habit (i.e. not repeating weekly)
+  let statisticalOneOffTotalPaise = 0;
+  let outlierCount = variableExpenses.filter(tx => tx.isOneOff).length;
+  const livingDailySpendMap = new Map<string, number>();
+
+  for (const [dateISO, dailyTotal] of dailySpendMap.entries()) {
+    const isWeekendDay = isWeekend(dateISO);
+    // On weekends, spending is often higher; use a higher tolerance (5x) unless it's a massive capital purchase
+    const outlierMultiplier = isWeekendDay ? 5.0 : 3.5;
+    const isSpike = dailyTotal > outlierMultiplier * medianActiveSpend && 
+                    dailyTotal > 2.0 * defaultSafeDailyPaise;
+
+    if (isSpike) {
+      // Treat the excess over typical daily spend as a one-off capital purchase
+      const excess = dailyTotal - medianActiveSpend;
+      statisticalOneOffTotalPaise += excess;
+      livingDailySpendMap.set(dateISO, medianActiveSpend);
+      outlierCount += 1;
+    } else {
+      livingDailySpendMap.set(dateISO, dailyTotal);
+    }
+  }
+
+  const totalOneOffPaise = explicitOneOffTotalPaise + statisticalOneOffTotalPaise;
+  const livingDailyTotals = Array.from(livingDailySpendMap.values());
+  const totalLivingExpensePaise = livingDailyTotals.reduce((sum, s) => sum + s, 0);
+
+  // 4. Calculate regular living burn rate
+  let velocityPaise: number;
+
+  if (daysElapsed >= 7) {
+    // 7-day rolling window naturally balances 5 weekdays + 2 weekend days
+    const sevenDaysAgoISO = addDaysToDate(todayISO, -6);
+    let last7DaysLivingTotal = 0;
+    for (let d = 0; d < 7; d++) {
+      const dayDate = addDaysToDate(sevenDaysAgoISO, d);
+      last7DaysLivingTotal += livingDailySpendMap.get(dayDate) || 0;
+    }
+    const weeklyAverage = Math.round(last7DaysLivingTotal / 7);
+    const cycleLivingAverage = Math.round(totalLivingExpensePaise / daysElapsed);
+
+    velocityPaise = Math.round(0.7 * weeklyAverage + 0.3 * cycleLivingAverage);
+  } else {
+    // 3 to 6 days elapsed: 3-day recent window + cycle average
+    const threeDaysAgoISO = addDaysToDate(todayISO, -2);
+    let recent3DaysLivingTotal = 0;
+    for (let d = 0; d < 3; d++) {
+      const dayDate = addDaysToDate(threeDaysAgoISO, d);
+      recent3DaysLivingTotal += livingDailySpendMap.get(dayDate) || 0;
+    }
+    const recent3DayAverage = Math.round(recent3DaysLivingTotal / 3);
+    const cycleLivingAverage = Math.round(totalLivingExpensePaise / daysElapsed);
+
+    velocityPaise = Math.round(0.7 * recent3DayAverage + 0.3 * cycleLivingAverage);
+  }
 
   return {
-    velocityPaise: Math.max(0, weightedVelocity),
+    velocityPaise: Math.max(0, velocityPaise),
     isDataSufficient: true,
+    oneOffExpensesPaise: totalOneOffPaise,
+    livingExpensesPaise: totalLivingExpensePaise,
+    outlierCount,
   };
 }
 
@@ -179,7 +294,11 @@ export function calculateForecast(input: ForecastInput): ForecastResult {
     : discretionaryPoolPaise;
 
   // 5. Calculate spending velocity
-  const { velocityPaise: recentDailySpendPaise, isDataSufficient } = calculateSpendingVelocity(
+  const { 
+    velocityPaise: recentDailySpendPaise, 
+    isDataSufficient,
+    oneOffExpensesPaise,
+  } = calculateSpendingVelocity(
     transactions,
     cycle.currentCycleStart,
     todayISO,
@@ -237,6 +356,7 @@ export function calculateForecast(input: ForecastInput): ForecastResult {
   const formattedEndBalance = formatPaiseToINR(projectedEndBalancePaise);
   const formattedCommitted = formatPaiseToINR(totalCommittedPaise);
   const formattedCurrentBalance = formatPaiseToINR(currentBalancePaise);
+  const formattedOneOff = formatPaiseToINR(oneOffExpensesPaise);
 
   const isPassedCycle = todayISO > cycle.nextPayoutDate;
   const isZeroDays = daysRemaining === 0;
@@ -265,11 +385,17 @@ export function calculateForecast(input: ForecastInput): ForecastResult {
     status = 'tight';
     statusHeadline = "You're on track, but your budget is tight";
     statusMessage = `Your current spending of ${formattedVelocity}/day will leave ${formattedEndBalance} by your next payout, dipping into your ${formattedReserve} reserve. Aim for ${formattedSafeSpend}/day to keep your cushion intact.`;
+    if (oneOffExpensesPaise > 0) {
+      statusMessage += ` (Factoring out ${formattedOneOff} in one-off expenses, your daily living pace is ${formattedVelocity}/day.)`;
+    }
   } else {
     status = 'safe';
     statusHeadline = "You're on track to make it to your next allowance";
     if (isDataSufficient) {
       statusMessage = `Spending around ${formattedVelocity}/day is well within your safe limit of ${formattedSafeSpend}/day. You are projected to finish with ${formattedEndBalance} remaining.`;
+      if (oneOffExpensesPaise > 0) {
+        statusMessage += ` (Factoring out ${formattedOneOff} in one-off expenses, your regular living pace is ${formattedVelocity}/day.)`;
+      }
     } else {
       statusMessage = `You have ${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining until your next allowance. Aim to spend no more than ${formattedSafeSpend}/day${totalCommittedPaise > 0 ? ` after accounting for ${formattedCommitted} in upcoming bills` : ''}.`;
     }
@@ -289,6 +415,7 @@ export function calculateForecast(input: ForecastInput): ForecastResult {
     discretionaryPoolPaise,
     recentDailySpendPaise,
     isDataSufficient,
+    oneOffExpensesPaise,
     simulationTimeline,
   };
 }

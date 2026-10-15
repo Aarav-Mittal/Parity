@@ -41,6 +41,8 @@ export interface Transaction {
   correctedFromId?: string | null;
   /** Pointer to scheduled recurring expense if this transaction represents a recurring bill payment */
   recurringExpenseId?: string | null;
+  /** Indicates if this was an irregular/one-off expense (e.g. semester books, doctor, laptop repair) */
+  isOneOff?: boolean;
 }
 
 export interface AllowanceCycle {
@@ -124,6 +126,8 @@ export interface ForecastResult {
   recentDailySpendPaise: number;
   /** Whether there is enough historical data (at least 3 days) for weighted velocity */
   isDataSufficient: boolean;
+  /** Total sum of irregular/one-off expenses detected and separated from daily velocity in paise */
+  oneOffExpensesPaise: number;
   /** Detailed day-by-day cashflow simulation */
   simulationTimeline: DailyProjection[];
 }

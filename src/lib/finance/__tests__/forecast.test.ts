@@ -174,35 +174,18 @@ describe('Deterministic Forecasting Engine', () => {
       targetReservePaise: 50000,   // ₹500 reserve cushion
     };
 
-    // Spending ₹150/day (150 * 7 days = ₹1,050). Remaining balance at end = ₹150, which is < ₹500 reserve!
+    // 7 days of steady ₹100/day spending (Oct 19 to Oct 25)
+    // 7 * 100 = ₹700 spent. Current balance = 1,600 - 700 = ₹900.
+    // Projected 7 days spend at ₹100/day = ₹700.
+    // Projected end balance = 900 - 700 = ₹200, which stays positive but dips below ₹500 reserve -> tight!
     const transactions: Transaction[] = [
-      {
-        id: 'tx-1',
-        userId: 'user-1',
-        type: 'expense',
-        amountPaise: 15000,
-        description: 'Meals',
-        transactionDate: '2026-10-23',
-        createdAt: '2026-10-23T12:00:00Z',
-      },
-      {
-        id: 'tx-2',
-        userId: 'user-1',
-        type: 'expense',
-        amountPaise: 15000,
-        description: 'Meals',
-        transactionDate: '2026-10-24',
-        createdAt: '2026-10-24T12:00:00Z',
-      },
-      {
-        id: 'tx-3',
-        userId: 'user-1',
-        type: 'expense',
-        amountPaise: 15000,
-        description: 'Meals',
-        transactionDate: '2026-10-25',
-        createdAt: '2026-10-25T12:00:00Z',
-      },
+      { id: 'tx-1', userId: 'user-1', type: 'expense', amountPaise: 10000, description: 'Meals', transactionDate: '2026-10-19', createdAt: '2026-10-19T12:00:00Z' },
+      { id: 'tx-2', userId: 'user-1', type: 'expense', amountPaise: 10000, description: 'Meals', transactionDate: '2026-10-20', createdAt: '2026-10-20T12:00:00Z' },
+      { id: 'tx-3', userId: 'user-1', type: 'expense', amountPaise: 10000, description: 'Meals', transactionDate: '2026-10-21', createdAt: '2026-10-21T12:00:00Z' },
+      { id: 'tx-4', userId: 'user-1', type: 'expense', amountPaise: 10000, description: 'Meals', transactionDate: '2026-10-22', createdAt: '2026-10-22T12:00:00Z' },
+      { id: 'tx-5', userId: 'user-1', type: 'expense', amountPaise: 10000, description: 'Meals', transactionDate: '2026-10-23', createdAt: '2026-10-23T12:00:00Z' },
+      { id: 'tx-6', userId: 'user-1', type: 'expense', amountPaise: 10000, description: 'Meals', transactionDate: '2026-10-24', createdAt: '2026-10-24T12:00:00Z' },
+      { id: 'tx-7', userId: 'user-1', type: 'expense', amountPaise: 10000, description: 'Meals', transactionDate: '2026-10-25', createdAt: '2026-10-25T12:00:00Z' },
     ];
 
     const forecast = calculateForecast({
@@ -386,5 +369,229 @@ describe('Deterministic Forecasting Engine', () => {
     });
 
     expect(forecast.statusHeadline).toContain('Cycle completed');
+  });
+
+  describe('Intelligent One-Off and Weekend Expenditure Handling', () => {
+    it('1. Accurately tracks ordinary living spending', () => {
+      const today = '2026-10-10'; // 10 days elapsed
+      // Steady ₹150/day across 10 days
+      const transactions: Transaction[] = [];
+      for (let i = 1; i <= 10; i++) {
+        const dayStr = String(i).padStart(2, '0');
+        transactions.push({
+          id: `tx-${i}`,
+          userId: 'user-1',
+          type: 'expense',
+          amountPaise: 15000, // ₹150
+          description: 'Daily Food & Travel',
+          transactionDate: `2026-10-${dayStr}`,
+          createdAt: `2026-10-${dayStr}T12:00:00Z`,
+        });
+      }
+
+      const forecast = calculateForecast({
+        todayISO: today,
+        cycle: mockCycle,
+        transactions,
+        recurringExpenses: [],
+      });
+
+      // 10 days * ₹150 = ₹1,500 spent. Balance = 8,000 - 1,500 = ₹6,500
+      expect(forecast.currentBalancePaise).toBe(650000);
+      expect(forecast.oneOffExpensesPaise).toBe(0); // Zero one-offs
+      // Living velocity is exactly ₹150/day (15000 paise)
+      expect(forecast.recentDailySpendPaise).toBe(15000);
+      expect(forecast.status).toBe('safe');
+    });
+
+    it('2. Isolates a large one-off capital purchase without falsely spiking daily living velocity', () => {
+      const today = '2026-10-10'; // 10 days elapsed
+      // Days 1-7: ₹150/day
+      // Day 8: ₹2,500 semester textbook
+      // Days 9-10: ₹150/day
+      const transactions: Transaction[] = [];
+      for (let i = 1; i <= 10; i++) {
+        const dayStr = String(i).padStart(2, '0');
+        if (i === 8) {
+          transactions.push({
+            id: `tx-${i}`,
+            userId: 'user-1',
+            type: 'expense',
+            amountPaise: 250000, // ₹2,500 one-off textbook
+            description: 'Semester Textbook',
+            transactionDate: `2026-10-${dayStr}`,
+            createdAt: `2026-10-${dayStr}T12:00:00Z`,
+            isOneOff: true,
+          });
+        } else {
+          transactions.push({
+            id: `tx-${i}`,
+            userId: 'user-1',
+            type: 'expense',
+            amountPaise: 15000, // ₹150
+            description: 'Meals',
+            transactionDate: `2026-10-${dayStr}`,
+            createdAt: `2026-10-${dayStr}T12:00:00Z`,
+          });
+        }
+      }
+
+      const forecast = calculateForecast({
+        todayISO: today,
+        cycle: mockCycle,
+        transactions,
+        recurringExpenses: [],
+      });
+
+      // 1. Ledger Balance MUST fully deduct the ₹2,500!
+      // Total spent = (9 * 150) + 2,500 = ₹3,850.
+      // Balance = 8,000 - 3,850 = ₹4,150 (415000 paise).
+      expect(forecast.currentBalancePaise).toBe(415000);
+
+      // 2. The ₹2,500 is isolated under oneOffExpensesPaise
+      expect(forecast.oneOffExpensesPaise).toBe(250000);
+
+      // 3. Living velocity stays anchored to the regular ~₹130-₹150 living pace, NOT ₹800+/day!
+      expect(forecast.recentDailySpendPaise).toBe(13050);
+
+      // 4. Remaining days = Oct 10 to Nov 1 = 22 days.
+      // Discretionary pool = 4,150 - 500 (reserve) = ₹3,650 (365000 paise).
+      // Safe daily spend = floor(3650 / 22) = ₹165/day (16590 paise).
+      expect(forecast.safeDailySpendPaise).toBe(Math.floor(365000 / 22));
+
+      // 5. Because living pace (₹150) <= safe spend (₹165), student is still ON TRACK!
+      expect(forecast.status).toBe('safe');
+      expect(forecast.projectedRunOutDate).toBeNull();
+      expect(forecast.statusMessage).toContain('Factoring out ₹2,500 in one-off expenses');
+    });
+
+    it('3. Naturally preserves regular weekend lifestyle spending without treating it as an outlier', () => {
+      // Oct 1, 2026 was a Thursday.
+      // Over 14 days (2 full weeks, Oct 1 to Oct 14):
+      // Weekdays: ₹120/day
+      // Saturdays & Sundays (Oct 3, 4, 10, 11): ₹350/day
+      const today = '2026-10-14';
+      const transactions: Transaction[] = [];
+
+      for (let i = 1; i <= 14; i++) {
+        const dayStr = String(i).padStart(2, '0');
+        const dateISO = `2026-10-${dayStr}`;
+        const isWeekendDay = i === 3 || i === 4 || i === 10 || i === 11;
+        const amountPaise = isWeekendDay ? 35000 : 12000; // ₹350 on weekend, ₹120 on weekday
+
+        transactions.push({
+          id: `tx-${i}`,
+          userId: 'user-1',
+          type: 'expense',
+          amountPaise,
+          description: isWeekendDay ? 'Weekend outing' : 'Weekday chai/food',
+          transactionDate: dateISO,
+          createdAt: `${dateISO}T12:00:00Z`,
+        });
+      }
+
+      const forecast = calculateForecast({
+        todayISO: today,
+        cycle: mockCycle,
+        transactions,
+        recurringExpenses: [],
+      });
+
+      // 1. Weekend outings should NOT be discarded as one-off outliers!
+      expect(forecast.oneOffExpensesPaise).toBe(0);
+
+      // 2. The 7-day rolling window balances 5 weekdays (₹120) and 2 weekend days (₹350):
+      // Weekly total = (5 * 120) + (2 * 350) = 600 + 700 = ₹1,300.
+      // Average daily velocity = 1300 / 7 ≈ ₹185.71/day (~18571 paise).
+      // Velocity reflects the true recurring weekly lifestyle!
+      expect(forecast.recentDailySpendPaise).toBeGreaterThan(18000);
+      expect(forecast.recentDailySpendPaise).toBeLessThan(19000);
+    });
+
+    it('4. Handles cold start with an early large spend without division errors or crash', () => {
+      const today = '2026-10-01'; // Day 1 of cycle
+      const transactions: Transaction[] = [
+        {
+          id: 'tx-1',
+          userId: 'user-1',
+          type: 'expense',
+          amountPaise: 300000, // ₹3,000 on Day 1
+          description: 'Course Fees',
+          transactionDate: '2026-10-01',
+          createdAt: '2026-10-01T10:00:00Z',
+          isOneOff: true,
+        },
+      ];
+
+      const forecast = calculateForecast({
+        todayISO: today,
+        cycle: mockCycle,
+        transactions,
+        recurringExpenses: [],
+      });
+
+      // Balance = 8,000 - 3,000 = ₹5,000
+      expect(forecast.currentBalancePaise).toBe(500000);
+      expect(forecast.isDataSufficient).toBe(false);
+      // Days remaining = 31 days. Discretionary pool = 5,000 - 500 = ₹4,500.
+      // Safe daily spend = 450000 / 31 = 14516 paise (~₹145/day)
+      expect(forecast.safeDailySpendPaise).toBe(Math.floor(450000 / 31));
+      // Uses safe daily spend as fallback velocity
+      expect(forecast.recentDailySpendPaise).toBe(forecast.safeDailySpendPaise);
+    });
+
+    it('5. Immediately recalculates balance and forecast when a historical transaction is edited', () => {
+      const today = '2026-10-10';
+      const initialTransactions: Transaction[] = [
+        {
+          id: 'tx-original',
+          userId: 'user-1',
+          type: 'expense',
+          amountPaise: 250000, // ₹2,500
+          description: 'Textbook',
+          transactionDate: '2026-10-05',
+          createdAt: '2026-10-05T12:00:00Z',
+        },
+      ];
+
+      // Initial forecast
+      const forecastBefore = calculateForecast({
+        todayISO: today,
+        cycle: mockCycle,
+        transactions: initialTransactions,
+        recurringExpenses: [],
+      });
+      expect(forecastBefore.currentBalancePaise).toBe(550000); // 8,000 - 2,500 = ₹5,500
+
+      // Student edits/corrects the transaction: "Actually it was ₹1,800, not ₹2,500"
+      const correctedTransactions: Transaction[] = [
+        ...initialTransactions,
+        {
+          id: 'tx-correction',
+          userId: 'user-1',
+          type: 'expense',
+          amountPaise: 180000, // ₹1,800
+          description: 'Textbook (discounted)',
+          transactionDate: '2026-10-05',
+          createdAt: '2026-10-05T14:00:00Z',
+          isCorrection: true,
+          correctedFromId: 'tx-original',
+        },
+      ];
+
+      const forecastAfter = calculateForecast({
+        todayISO: today,
+        cycle: mockCycle,
+        transactions: correctedTransactions,
+        recurringExpenses: [],
+      });
+
+      // Balance immediately updates to: 8,000 - 1,800 = ₹6,200 (+₹700 restored)
+      expect(forecastAfter.currentBalancePaise).toBe(620000);
+      // Discretionary pool immediately increases by ₹700 (70000 paise)
+      expect(forecastAfter.discretionaryPoolPaise - forecastBefore.discretionaryPoolPaise).toBe(70000);
+      // Safe daily spend increases accordingly
+      expect(forecastAfter.safeDailySpendPaise).toBeGreaterThan(forecastBefore.safeDailySpendPaise);
+    });
   });
 });
