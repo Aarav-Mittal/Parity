@@ -56,4 +56,18 @@ describe('Allowance Dates & Calendar Math', () => {
     expect(nextPayoutDate).toBe('2027-01-01');
     expect(daysRemaining).toBe(3);
   });
+
+  it('correctly adds days across month and year boundaries', () => {
+    expect(addDaysToDate('2026-10-28', 5)).toBe('2026-11-02');
+    expect(addDaysToDate('2026-12-30', 3)).toBe('2027-01-02');
+    expect(addDaysToDate('2024-02-27', 3)).toBe('2024-03-01'); // Leap year 2024 has Feb 29
+  });
+
+  it('clamps cycle day 31 to February 29 in a leap year', () => {
+    // Reference: Feb 15, 2024 (leap year). Cycle day: 31st
+    // Started Jan 31, 2024. Next payout should be Feb 29, 2024!
+    const { currentCycleStart, nextPayoutDate } = computeCycleDates('2024-02-15', 31);
+    expect(currentCycleStart).toBe('2024-01-31');
+    expect(nextPayoutDate).toBe('2024-02-29');
+  });
 });
