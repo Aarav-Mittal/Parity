@@ -33,16 +33,21 @@ export function formatPaiseToINR(
   options: { includeSymbol?: boolean; forceDecimals?: boolean } = {}
 ): string {
   const { includeSymbol = true, forceDecimals = false } = options;
-  const rupees = paiseToRupees(paise);
+  const isNegative = paise < 0;
+  const absPaise = Math.abs(paise);
+  const rupees = paiseToRupees(absPaise);
   
-  const hasDecimals = paise % 100 !== 0 || forceDecimals;
+  const hasDecimals = absPaise % 100 !== 0 || forceDecimals;
   
   const formattedNumber = new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: hasDecimals ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(rupees);
 
-  return includeSymbol ? `₹${formattedNumber}` : formattedNumber;
+  if (!includeSymbol) {
+    return isNegative ? `-${formattedNumber}` : formattedNumber;
+  }
+  return isNegative ? `-₹${formattedNumber}` : `₹${formattedNumber}`;
 }
 
 /**

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { MoneyProvider } from "@/lib/store/MoneyContext";
@@ -13,9 +13,16 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#0f172a",
+};
+
 export const metadata: Metadata = {
-  title: "AI Student Money Tracker — Will My Money Last?",
-  description: "A calm, student-first money survival tracker and budgeting application.",
+  title: "Money Survival — Student Budgeting & Run-Out Forecast",
+  description: "A calm, zero-guilt money survival calculator and AI expense tracker for college students living on a limited allowance.",
+  keywords: ["student budgeting", "money tracker", "allowance calculator", "safe daily spend", "college finance"],
 };
 
 export default function RootLayout({

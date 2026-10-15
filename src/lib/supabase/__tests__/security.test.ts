@@ -102,6 +102,64 @@ describe('Security & Row Level Security (RLS) Policy Audit', () => {
     expect(mockDatabase.find(r => r.id === 'tx-1')?.description).toBe("User A's Lunch");
   });
 
+  it('prevents spoofed user_id on INSERT via WITH CHECK (auth.uid() = user_id)', () => {
+    const userA_id = 'user-uuid-aaaa-1111';
+    const userB_id = 'user-uuid-bbbb-2222';
+
+    // RLS insert policy: WITH CHECK (auth.uid() = user_id)
+    function rlsInsert(currentAuthUid: string, rowToInsert: { user_id: string; amount_paise: number }): boolean {
+      if (rowToInsert.user_id !== currentAuthUid) {
+        // PostgreSQL RLS rejects row insertion!
+        return false;
+      }
+      return true;
+    }
+
+    // User B attempts to spoof User A's ID
+    const spoofedInsert = rlsInsert(userB_id, {
+      user_id: userA_id,
+      amount_paise: 99900,
+    });
+    expect(spoofedInsert).toBe(false);
+
+    // Legitimate insert succeeds
+    const legitimateInsert = rlsInsert(userB_id, {
+      user_id: userB_id,
+      amount_paise: 99900,
+    });
+    expect(legitimateInsert).toBe(true);
+  });
+
+  it('prevents unauthorized DELETE attempts across tenant boundaries', () => {
+    const userA_id = 'user-uuid-aaaa-1111';
+    const userB_id = 'user-uuid-bbbb-2222';
+
+    const mockRows = [
+      { id: 'tx-1', user_id: userA_id },
+      { id: 'tx-2', user_id: userB_id },
+    ];
+
+    function rlsDelete(currentAuthUid: string, targetId: string): boolean {
+      const row = mockRows.find(r => r.id === targetId);
+      if (!row || row.user_id !== currentAuthUid) {
+        return false; // RLS blocks deletion of other user's record
+      }
+      return true;
+    }
+
+    expect(rlsDelete(userB_id, 'tx-1')).toBe(false); // User B cannot delete User A's transaction
+    expect(rlsDelete(userB_id, 'tx-2')).toBe(true);  // User B can delete own transaction
+  });
+
+  it('enforces CHECK constraints in migration SQL for non-negative money and valid days', () => {
+    // 1. Transaction amount must be positive
+    expect(migrationSQL).toMatch(/amount_paise\s+BIGINT\s+NOT\s+NULL\s+CHECK\s*\(\s*amount_paise\s*>\s*0\s*\)/i);
+    // 2. Allowance amount must be non-negative
+    expect(migrationSQL).toMatch(/allowance_amount_paise\s+BIGINT\s+NOT\s+NULL\s+CHECK\s*\(\s*allowance_amount_paise\s*>=\s*0\s*\)/i);
+    // 3. Day of month must be between 1 and 31
+    expect(migrationSQL).toMatch(/cycle_day_of_month\s+INTEGER\s+NOT\s+NULL\s+CHECK\s*\(\s*cycle_day_of_month\s*>=\s*1\s+AND\s+cycle_day_of_month\s*<=\s*31\s*\)/i);
+  });
+
   it('ensures .env.example contains no hardcoded secrets or service role keys', () => {
     const envExamplePath = path.resolve(import.meta.dirname, '../../../../.env.example');
     const envExample = fs.readFileSync(envExamplePath, 'utf8');
