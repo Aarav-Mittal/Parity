@@ -43,6 +43,28 @@ export async function POST(req: NextRequest) {
         break;
       }
 
+      case 'log_batch_expenses': {
+        const transactions: ProposedTransactionPayload[] = result.intent.expenses.map(e => ({
+          type: 'expense',
+          amountPaise: e.amountPaise,
+          description: e.description,
+          categoryId: e.categoryGuess || 'cat-misc',
+          isOneOff: Boolean(e.isOneOff),
+          transactionDate: todayISO,
+        }));
+
+        actionProposal = {
+          id: proposalId,
+          type: 'create_batch_transactions',
+          status: 'pending',
+          payload: {
+            transactions,
+            totalAmountPaise: result.intent.totalAmountPaise,
+          },
+        };
+        break;
+      }
+
       case 'log_income': {
         const payload: ProposedTransactionPayload = {
           type: 'income',
@@ -129,6 +151,8 @@ export async function POST(req: NextRequest) {
       intent: result.intent,
       conversationalReply: result.conversationalReply,
       providerUsed: result.providerUsed,
+      modelName: result.modelName,
+      debugNote: result.debugNote,
       actionProposal,
     });
   } catch (error: unknown) {

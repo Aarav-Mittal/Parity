@@ -2,6 +2,7 @@ import { Category, Transaction } from './finance';
 
 export type IntentType =
   | 'log_expense'
+  | 'log_batch_expenses'
   | 'log_income'
   | 'correct_transaction'
   | 'undo_transaction'
@@ -20,6 +21,17 @@ export interface ParsedExpenseIntent extends BaseParsedIntent {
   description: string;
   categoryGuess?: string; // e.g. 'cat-food'
   isOneOff?: boolean;
+}
+
+export interface ParsedBatchExpenseIntent extends BaseParsedIntent {
+  intent: 'log_batch_expenses';
+  expenses: Array<{
+    amountPaise: number;
+    description: string;
+    categoryGuess?: string;
+    isOneOff?: boolean;
+  }>;
+  totalAmountPaise: number;
 }
 
 export interface ParsedIncomeIntent extends BaseParsedIntent {
@@ -53,6 +65,7 @@ export interface ParsedUnknownIntent extends BaseParsedIntent {
 
 export type ParsedFinancialIntent =
   | ParsedExpenseIntent
+  | ParsedBatchExpenseIntent
   | ParsedIncomeIntent
   | ParsedCorrectionIntent
   | ParsedUndoIntent
@@ -69,6 +82,11 @@ export interface ProposedTransactionPayload {
   isOneOff?: boolean;
   transactionDate: string;
   isRefund?: boolean;
+}
+
+export interface ProposedBatchTransactionsPayload {
+  transactions: ProposedTransactionPayload[];
+  totalAmountPaise: number;
 }
 
 export interface ProposedUpdatePayload {
@@ -95,6 +113,7 @@ export interface ProposedQueryPayload {
 
 export type ActionProposal =
   | { id: string; type: 'create_transaction'; status: ActionStatus; payload: ProposedTransactionPayload }
+  | { id: string; type: 'create_batch_transactions'; status: ActionStatus; payload: ProposedBatchTransactionsPayload }
   | { id: string; type: 'update_transaction'; status: ActionStatus; payload: ProposedUpdatePayload }
   | { id: string; type: 'delete_transaction'; status: ActionStatus; payload: ProposedDeletePayload }
   | { id: string; type: 'answer_query'; status: ActionStatus; payload: ProposedQueryPayload };
@@ -105,4 +124,7 @@ export interface ChatMessage {
   content: string;
   createdAt: string; // ISO 8601
   actionProposal?: ActionProposal;
+  providerUsed?: 'groq' | 'gemini' | 'fallback';
+  modelName?: string;
+  debugNote?: string;
 }

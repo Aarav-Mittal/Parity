@@ -13,6 +13,7 @@ import {
   RotateCcw,
   Bot,
   User,
+  Cpu,
   HelpCircle,
   TrendingDown,
   Coffee,
@@ -54,6 +55,7 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_WELCOME_MESSAGE]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [activeEngine, setActiveEngine] = useState<{ provider: 'groq' | 'fallback' | 'gemini'; model?: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -113,12 +115,22 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
 
       const data = await response.json();
 
+      if (data.providerUsed) {
+        setActiveEngine({
+          provider: data.providerUsed,
+          model: data.modelName,
+        });
+      }
+
       const assistantMessage: ChatMessage = {
         id: `msg-assistant-${Date.now()}`,
         role: 'assistant',
         content: data.conversationalReply || 'Understood.',
         createdAt: new Date().toISOString(),
         actionProposal: data.actionProposal,
+        providerUsed: data.providerUsed,
+        modelName: data.modelName,
+        debugNote: data.debugNote,
       };
 
       setMessages(prev => [...prev, assistantMessage]);
@@ -148,6 +160,17 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
         isOneOff: p.isOneOff,
         transactionDate: p.transactionDate,
       });
+    } else if (proposal.type === 'create_batch_transactions') {
+      for (const p of proposal.payload.transactions) {
+        addTransaction({
+          type: p.type,
+          amountPaise: p.amountPaise,
+          description: p.description,
+          categoryId: p.categoryId,
+          isOneOff: p.isOneOff,
+          transactionDate: p.transactionDate,
+        });
+      }
     } else if (proposal.type === 'update_transaction') {
       const p = proposal.payload;
       editTransaction(p.targetTransactionId, {
@@ -178,6 +201,8 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
     const confirmationText =
       proposal.type === 'create_transaction'
         ? `Logged! Your balance and daily spending limit have been updated.`
+        : proposal.type === 'create_batch_transactions'
+        ? `Logged all ${proposal.payload.transactions.length} items to your ledger!`
         : proposal.type === 'update_transaction'
         ? `Correction applied! Your ledger has been updated.`
         : `Transaction removed from your ledger.`;
@@ -235,9 +260,21 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-slate-900 text-sm">Money Survival AI</h3>
-                <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 text-[10px] font-medium">
-                  Active
-                </span>
+                {activeEngine?.provider === 'groq' ? (
+                  <span className="rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1" title={`Inference via Groq Cloud (${activeEngine.model || 'qwen3.8-27b'})`}>
+                    <Sparkles className="h-3 w-3 text-emerald-600" />
+                    Groq LLM
+                  </span>
+                ) : activeEngine?.provider === 'fallback' ? (
+                  <span className="rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 text-[10px] font-semibold flex items-center gap-1" title="Offline deterministic regex engine active">
+                    <Cpu className="h-3 w-3 text-amber-600" />
+                    Offline Engine
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-slate-100 text-slate-700 border border-slate-200 px-2 py-0.5 text-[10px] font-medium">
+                    Ready
+                  </span>
+                )}
               </div>
               <p className="text-[11px] text-slate-500">
                 Safe Daily Spend: <span className="font-semibold text-slate-700">{formatRupees(forecast ? forecast.safeDailySpendPaise : 0)}/day</span>
@@ -288,6 +325,29 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
                 >
                   <p className="whitespace-pre-wrap">{msg.content}</p>
                 </div>
+
+                {/* Engine Source Badge for Assistant Replies */}
+                {msg.role === 'assistant' && msg.id !== 'msg-welcome' && (
+                  <div className="flex flex-wrap items-center gap-1.5 mt-1 px-1">
+                    {msg.providerUsed === 'groq' ? (
+                      <span className="text-[10px] text-emerald-700 font-medium flex items-center gap-1">
+                        <Sparkles className="h-2.5 w-2.5 text-emerald-500" />
+                        Groq AI ({msg.modelName?.replace('qwen/', '') || 'qwen3.8-27b'})
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 font-medium flex items-center gap-1">
+                        <Cpu className="h-2.5 w-2.5 text-slate-400" />
+                        Offline Regex Engine
+                      </span>
+                    )}
+
+                    {msg.debugNote && (
+                      <span className="text-[10px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.2 border border-amber-200">
+                        {msg.debugNote}
+                      </span>
+                    )}
+                  </div>
+                )}
 
                 {/* Render interactive action card if present */}
                 {msg.actionProposal && (

@@ -85,6 +85,7 @@ describe('AI Provider Adapter Architecture', () => {
         ok: false,
         status: 429,
         statusText: 'Too Many Requests',
+        text: async () => 'Too Many Requests',
       } as unknown as Response);
 
       const result = await groqWithMockKey.parseMessage('spent 250 on lunch', mockContext);
@@ -92,6 +93,45 @@ describe('AI Provider Adapter Architecture', () => {
       expect(result.intent.intent).toBe('log_expense');
       if (result.intent.intent === 'log_expense') {
         expect(result.intent.amountPaise).toBe(25000);
+      }
+
+      global.fetch = originalFetch;
+    });
+
+    it('parses multi-expense response from Groq into log_batch_expenses intent', async () => {
+      const groqWithMockKey = new GroqProvider('gsk_mock_test_key_123', 'qwen/qwen3.8-27b');
+
+      const mockGroqResponse = {
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                intent: 'log_batch_expenses',
+                transactions: [
+                  { type: 'expense', amountPaise: 2000, description: 'Samosa', categoryGuess: 'cat-food', isOneOff: false },
+                  { type: 'expense', amountPaise: 4000, description: 'Snacks', categoryGuess: 'cat-food', isOneOff: false },
+                  { type: 'expense', amountPaise: 4000, description: 'Coke', categoryGuess: 'cat-food', isOneOff: false },
+                ],
+                conversationalReply: 'Drafted 3 expenses totaling ₹100.',
+              }),
+            },
+          },
+        ],
+      };
+
+      const originalFetch = global.fetch;
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: async () => mockGroqResponse,
+      } as unknown as Response);
+
+      const result = await groqWithMockKey.parseMessage('spent 20 on samosa, 40 on snacks, and 40 for coke', mockContext);
+      expect(result.providerUsed).toBe('groq');
+      expect(result.intent.intent).toBe('log_batch_expenses');
+      if (result.intent.intent === 'log_batch_expenses') {
+        expect(result.intent.expenses).toHaveLength(3);
+        expect(result.intent.totalAmountPaise).toBe(10000);
       }
 
       global.fetch = originalFetch;

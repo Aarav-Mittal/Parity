@@ -28,6 +28,16 @@ export class FallbackProvider implements AiProvider {
         break;
       }
 
+      case 'log_batch_expenses': {
+        const count = intent.expenses.length;
+        const formattedTotal = formatRupees(intent.totalAmountPaise);
+        const itemSummaries = intent.expenses
+          .map(e => `${e.description} (${formatRupees(e.amountPaise)})`)
+          .join(', ');
+        reply = `Drafted ${count} expenses totaling ${formattedTotal}: ${itemSummaries}. Confirm below to log them to your ledger.`;
+        break;
+      }
+
       case 'log_income': {
         const formattedAmt = formatRupees(intent.amountPaise);
         const typeStr = intent.isRefund ? 'cashback/refund' : 'allowance/income';

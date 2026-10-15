@@ -101,6 +101,80 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     );
   }
 
+  if (proposal.type === 'create_batch_transactions') {
+    const { transactions, totalAmountPaise } = proposal.payload;
+
+    return (
+      <div className="mt-2.5 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm text-xs">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <span className="p-1.5 rounded-lg bg-rose-50 text-rose-700">
+              <ArrowUpRight className="h-4 w-4" />
+            </span>
+            <div>
+              <span className="font-semibold text-slate-900 text-sm">
+                Batch Expenses ({transactions.length} items)
+              </span>
+              <span className="text-slate-400 text-[11px] block">Multiple entries detected</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="text-base font-bold text-slate-900">
+              -{formatRupees(totalAmountPaise)}
+            </span>
+          </div>
+        </div>
+
+        <div className="py-2 divide-y divide-slate-100">
+          {transactions.map((tx, idx) => (
+            <div key={idx} className="flex items-center justify-between py-1.5">
+              <div>
+                <span className="font-medium text-slate-800">{tx.description}</span>
+                <span className="text-[10px] text-slate-400 block">{getCategoryName(tx.categoryId)}</span>
+              </div>
+              <span className="font-semibold text-slate-700">-{formatRupees(tx.amountPaise)}</span>
+            </div>
+          ))}
+        </div>
+
+        {proposal.status === 'pending' ? (
+          <div className="flex gap-2 pt-2 border-t border-slate-100">
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              className="flex-1 py-1.5 text-xs font-semibold gap-1.5"
+              onClick={() => onConfirm(proposal)}
+            >
+              <Check className="h-3.5 w-3.5" />
+              Confirm All ({transactions.length})
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-xs text-slate-500 hover:text-slate-700"
+              onClick={() => onCancel(proposal)}
+            >
+              Cancel
+            </Button>
+          </div>
+        ) : proposal.status === 'confirmed' ? (
+          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-emerald-700 font-medium">
+            <span className="flex items-center gap-1.5">
+              <Check className="h-3.5 w-3.5" /> {transactions.length} items logged to ledger
+            </span>
+            <span className="text-[10px] text-slate-400">Updated</span>
+          </div>
+        ) : (
+          <div className="pt-2 border-t border-slate-100 flex items-center gap-1 text-slate-400 font-medium">
+            <X className="h-3.5 w-3.5" /> Cancelled
+          </div>
+        )}
+      </div>
+    );
+  }
+
   if (proposal.type === 'update_transaction') {
     const { originalAmountPaise, newAmountPaise, originalDescription, newDescription } = proposal.payload;
 

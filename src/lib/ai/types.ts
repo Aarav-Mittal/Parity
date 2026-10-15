@@ -13,6 +13,8 @@ export interface AiParseResult {
   intent: ParsedFinancialIntent;
   conversationalReply: string;
   providerUsed: 'groq' | 'gemini' | 'fallback';
+  modelName?: string;
+  debugNote?: string;
 }
 
 export interface AiProvider {

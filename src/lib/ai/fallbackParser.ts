@@ -7,7 +7,8 @@ const CATEGORY_KEYWORDS: Record<string, string[]> = {
     'chai', 'tea', 'coffee', 'lunch', 'dinner', 'breakfast', 'canteen',
     'biryani', 'pizza', 'burger', 'swiggy', 'zomato', 'maggi', 'snack',
     'snacks', 'samosa', 'food', 'grocery', 'groceries', 'milk', 'eating',
-    'momo', 'momos', 'shawarma', 'rolls', 'thali', 'dosa'
+    'momo', 'momos', 'shawarma', 'rolls', 'thali', 'dosa', 'coke', 'pepsi',
+    'cold drink', 'drink', 'beverage', 'juice', 'soda', 'water'
   ],
   'cat-travel': [
     'auto', 'metro', 'bus', 'cab', 'uber', 'ola', 'rapido', 'rickshaw',
@@ -143,7 +144,7 @@ function cleanDescription(rawText: string, matchedAmountStr: string): string {
   cleaned = cleaned.replace(matchedAmountStr, ' ');
 
   // Remove common filler words & prepositions
-  cleaned = cleaned.replace(/\b(spent|paid|bought|cost|got|for|on|in|to|at|rupees|rs|bucks|inr)\b/gi, ' ');
+  cleaned = cleaned.replace(/\b(spent|paid|bought|cost|got|for|on|in|to|at|rupees|rs|bucks|inr|then|another|also|and|a|an|i)\b/gi, ' ');
   
   // Collapse whitespace
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
@@ -287,7 +288,45 @@ export function parseNaturalLanguageInput(rawInput: string): ParsedFinancialInte
     }
   }
 
-  // 5. Expense Intent (Standard Student Logging)
+  // 5. Batch Expense Intent (Multiple expenses in a single message)
+  // e.g. "i spent 20 on a samosa, then 40 on snacks and another 40 for coke"
+  // e.g. "auto 50, lunch 120, chai 20"
+  const delimiterRegex = /(?:\s*,\s*|\s+then\s+|\s+and\s+(?:another\s+)?|\s*\+\s*|\n|;)/i;
+  const potentialClauses = trimmed.split(delimiterRegex).map(c => c.trim()).filter(Boolean);
+
+  if (potentialClauses.length >= 2) {
+    const batchItems: Array<{
+      amountPaise: number;
+      description: string;
+      categoryGuess: string;
+      isOneOff: boolean;
+    }> = [];
+
+    for (const clause of potentialClauses) {
+      const amt = extractAmount(clause);
+      if (amt) {
+        batchItems.push({
+          amountPaise: amt.amountPaise,
+          description: cleanDescription(clause, amt.rawMatched),
+          categoryGuess: guessCategory(clause),
+          isOneOff: isOneOffCandidate(clause, amt.amountPaise),
+        });
+      }
+    }
+
+    if (batchItems.length >= 2) {
+      const totalAmountPaise = batchItems.reduce((sum, item) => sum + item.amountPaise, 0);
+      return {
+        intent: 'log_batch_expenses',
+        expenses: batchItems,
+        totalAmountPaise,
+        confidence: 0.9,
+        rawInput,
+      };
+    }
+  }
+
+  // 6. Single Expense Intent (Standard Student Logging)
   // Extract amount
   const amountExtract = extractAmount(trimmed);
   if (amountExtract) {

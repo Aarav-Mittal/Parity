@@ -2,9 +2,11 @@ import { AiParseResult, AiProvider, AiProviderContext } from '../types';
 import { FallbackProvider } from './fallbackProvider';
 import { formatRupees } from '@/lib/finance/currency';
 import { DEFAULT_CATEGORIES } from '@/lib/store/sampleData';
+import { ParsedBatchExpenseIntent, ParsedExpenseIntent, ParsedFinancialIntent } from '@/types/chat';
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const DEFAULT_MODEL = 'llama-3.3-70b-versatile';
+const DEFAULT_MODEL = 'qwen/qwen3.8-27b';
+const FALLBACK_MODEL = 'qwen/qwen3.8-27b';
 
 export class GroqProvider implements AiProvider {
   name = 'groq';
@@ -33,8 +35,8 @@ export class GroqProvider implements AiProvider {
       const forecast = context.forecast;
       const recentTx = context.recentTransactions || [];
 
-      const systemPrompt = `You are "Money Survival AI", an intelligent conversational financial companion for Indian college students living on a monthly allowance.
-Your job is to extract the user's financial intent from their message and craft a concise, empathetic 1-2 sentence response.
+      const systemPrompt = `You are "Money Survival AI", an intelligent financial companion for Indian college students living on a monthly allowance.
+Extract the user's financial intent from their message and craft a concise, friendly 1-2 sentence response.
 
 ### Available Categories:
 ${categories.map(c => `- ${c.id}: "${c.name}"`).join('\n')}
@@ -49,64 +51,79 @@ ${categories.map(c => `- ${c.id}: "${c.name}"`).join('\n')}
 - Survival Status: ${forecast?.status || 'Unknown'}
 - Recent Transactions: ${recentTx.slice(-3).map(t => `${t.description} (${formatRupees(t.amountPaise)})`).join(', ') || 'None'}
 
-### Intent Types to Detect:
-1. "log_expense": User spent money (e.g., "spent 120 on auto", "canteen lunch 180", "bought shoes for 1800").
-   - amountPaise: Amount in paise (₹1 = 100 paise). ₹180 = 18000 paise.
-   - description: Cleaned title (e.g. "Auto to campus", "Canteen Lunch").
-   - categoryGuess: Most fitting category id from the list above.
-   - isOneOff: true if it is an irregular capital purchase (shoes, jacket, textbook, phone repair, or >= ₹1,000).
-2. "log_income": User received money or cashback/refund (e.g., "got 500 cashback", "received 8000 allowance").
-   - amountPaise: Amount in paise.
-   - isRefund: true for cashbacks/refunds.
-3. "correct_transaction": User wants to correct a previous mistake (e.g., "actually lunch was 150 not 180").
-   - target: "last"
-   - newAmountPaise: New amount in paise.
-4. "undo_transaction": User wants to cancel or delete (e.g., "undo", "delete that").
-   - target: "last"
-5. "budget_query": User asks if they can afford something, how much they can spend today, or if their money will last.
-   - queryType: "safe_spend" | "will_money_last" | "affordability_check" | "general"
-   - targetAmountPaise: Amount in paise if checking affordability of an item.
-6. "unknown": Casual chatter or unrecognized message.
+### MULTI-EXPENSE LOGGING (VERY IMPORTANT):
+If the user mentions MULTIPLE expenses in a single message (e.g. "spent 20 on a samosa, then 40 on snacks and another 40 for coke" or "auto 50, lunch 120, chai 20"), you MUST extract EVERY SINGLE ITEM into the "transactions" array!
+Do NOT lump multiple expenses into one item.
 
-### Output Requirements:
-You MUST output ONLY a valid JSON object with the following structure:
+### Output JSON Schema:
+You MUST output ONLY a valid JSON object with this exact structure:
 {
-  "intent": {
-    "intent": "log_expense" | "log_income" | "correct_transaction" | "undo_transaction" | "budget_query" | "unknown",
-    "amountPaise": 18000,
-    "description": "Lunch at canteen",
-    "categoryGuess": "cat-food",
-    "isOneOff": false,
-    "isRefund": false,
+  "intent": "log_batch_expenses" | "log_expense" | "log_income" | "correct_transaction" | "undo_transaction" | "budget_query" | "unknown",
+  "transactions": [
+    {
+      "type": "expense",
+      "amountPaise": 2000,
+      "description": "Samosa",
+      "categoryGuess": "cat-food",
+      "isOneOff": false
+    }
+  ],
+  "income": {
+    "amountPaise": 800000,
+    "description": "Monthly Allowance",
+    "isRefund": false
+  },
+  "correction": {
     "target": "last",
     "newAmountPaise": 15000,
-    "queryType": "safe_spend",
+    "newDescription": "Lunch"
+  },
+  "query": {
+    "queryType": "safe_spend" | "will_money_last" | "affordability_check" | "general",
     "targetAmountPaise": 0
   },
-  "conversationalReply": "Concise 1-2 sentence response. If logging, say what was drafted. If affordability check, explain the impact on their daily limit truthfully using real numbers."
+  "conversationalReply": "Concise 1-2 sentence response explaining what was drafted or answering their budget query using real numbers."
 }`;
 
-      const response = await fetch(GROQ_API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey.trim()}`,
-        },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: message },
-          ],
-          response_format: { type: 'json_object' },
-          temperature: 0.1,
-          max_tokens: 600,
-        }),
-      });
+      // Helper function to call Groq API with a specified model
+      const callGroq = async (modelToUse: string) => {
+        return fetch(GROQ_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey.trim()}`,
+          },
+          body: JSON.stringify({
+            model: modelToUse,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: message },
+            ],
+            response_format: { type: 'json_object' },
+            temperature: 0.1,
+            max_tokens: 800,
+          }),
+        });
+      };
+
+      let activeModel = this.model;
+      let response = await callGroq(activeModel);
+
+      // If requested model is not found (404), auto-fallback to qwen/qwen3.8-27b
+      if (response.status === 404 && activeModel !== FALLBACK_MODEL) {
+        console.warn(`[GroqProvider] Model ${activeModel} not found (404). Retrying with ${FALLBACK_MODEL}...`);
+        activeModel = FALLBACK_MODEL;
+        response = await callGroq(activeModel);
+      }
 
       if (!response.ok) {
-        console.warn(`[GroqProvider] API returned status ${response.status}: ${response.statusText}. Falling back to offline parser.`);
-        return this.fallbackProvider.parseMessage(message, context);
+        const errorText = await response.text();
+        console.warn(`[GroqProvider] API error ${response.status}: ${errorText}. Falling back to offline parser.`);
+        const fallbackResult = await this.fallbackProvider.parseMessage(message, context);
+        return {
+          ...fallbackResult,
+          debugNote: `Groq error HTTP ${response.status}: fell back to offline parser`,
+        };
       }
 
       const data = await response.json();
@@ -116,22 +133,93 @@ You MUST output ONLY a valid JSON object with the following structure:
       }
 
       const parsed = JSON.parse(content);
-      if (!parsed.intent || !parsed.intent.intent) {
-        return this.fallbackProvider.parseMessage(message, context);
+      const reply = parsed.conversationalReply || 'Understood.';
+
+      // Determine final ParsedFinancialIntent based on structured output
+      let finalIntent: ParsedFinancialIntent;
+
+      if (parsed.transactions && Array.isArray(parsed.transactions) && parsed.transactions.length > 1) {
+        const expenses = parsed.transactions.map((tx: any) => ({
+          amountPaise: Number(tx.amountPaise) || 0,
+          description: String(tx.description || 'Expense'),
+          categoryGuess: String(tx.categoryGuess || 'cat-misc'),
+          isOneOff: Boolean(tx.isOneOff),
+        }));
+        const totalAmountPaise = expenses.reduce((sum: number, e: any) => sum + e.amountPaise, 0);
+
+        finalIntent = {
+          intent: 'log_batch_expenses',
+          expenses,
+          totalAmountPaise,
+          confidence: 0.98,
+          rawInput: message,
+        } as ParsedBatchExpenseIntent;
+      } else if (parsed.transactions && Array.isArray(parsed.transactions) && parsed.transactions.length === 1) {
+        const tx = parsed.transactions[0];
+        finalIntent = {
+          intent: 'log_expense',
+          amountPaise: Number(tx.amountPaise) || 0,
+          description: String(tx.description || 'Expense'),
+          categoryGuess: String(tx.categoryGuess || 'cat-misc'),
+          isOneOff: Boolean(tx.isOneOff),
+          confidence: 0.95,
+          rawInput: message,
+        } as ParsedExpenseIntent;
+      } else if (parsed.intent === 'log_income' || parsed.income) {
+        finalIntent = {
+          intent: 'log_income',
+          amountPaise: Number(parsed.income?.amountPaise || parsed.amountPaise) || 0,
+          description: String(parsed.income?.description || 'Income'),
+          isRefund: Boolean(parsed.income?.isRefund),
+          confidence: 0.95,
+          rawInput: message,
+        };
+      } else if (parsed.intent === 'correct_transaction' || parsed.correction) {
+        finalIntent = {
+          intent: 'correct_transaction',
+          target: 'last',
+          newAmountPaise: Number(parsed.correction?.newAmountPaise || parsed.newAmountPaise) || undefined,
+          newDescription: parsed.correction?.newDescription || undefined,
+          confidence: 0.95,
+          rawInput: message,
+        };
+      } else if (parsed.intent === 'undo_transaction') {
+        finalIntent = {
+          intent: 'undo_transaction',
+          target: 'last',
+          confidence: 0.95,
+          rawInput: message,
+        };
+      } else if (parsed.intent === 'budget_query' || parsed.query) {
+        finalIntent = {
+          intent: 'budget_query',
+          queryType: parsed.query?.queryType || 'general',
+          targetAmountPaise: Number(parsed.query?.targetAmountPaise) || undefined,
+          confidence: 0.95,
+          rawInput: message,
+        };
+      } else {
+        finalIntent = {
+          intent: 'unknown',
+          confidence: 0.5,
+          rawInput: message,
+        };
       }
 
       return {
-        intent: {
-          ...parsed.intent,
-          confidence: 0.95,
-          rawInput: message,
-        },
-        conversationalReply: parsed.conversationalReply || 'Got it.',
+        intent: finalIntent,
+        conversationalReply: reply,
         providerUsed: 'groq',
+        modelName: activeModel,
       };
-    } catch (err) {
-      console.warn('[GroqProvider] Error during inference, gracefully degrading to offline parser:', err);
-      return this.fallbackProvider.parseMessage(message, context);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      console.warn('[GroqProvider] Error during inference, gracefully degrading to offline parser:', errMsg);
+      const fallbackResult = await this.fallbackProvider.parseMessage(message, context);
+      return {
+        ...fallbackResult,
+        debugNote: `Groq exception (${errMsg}): fell back to offline parser`,
+      };
     }
   }
 }

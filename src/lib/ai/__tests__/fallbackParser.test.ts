@@ -169,6 +169,34 @@ describe('Offline Fallback Parser (Zero-Cost Deterministic Intent Extractor)', (
       }
     });
 
+    it('parses multiple expenses from a single natural sentence (batch logging)', () => {
+      const result = parseNaturalLanguageInput('i spent 20 on a samosa, then 40 on snacks and another 40 for coke');
+      expect(result.intent).toBe('log_batch_expenses');
+      if (result.intent === 'log_batch_expenses') {
+        expect(result.expenses).toHaveLength(3);
+        expect(result.expenses[0].amountPaise).toBe(2000);
+        expect(result.expenses[0].description).toBe('Samosa');
+        expect(result.expenses[0].categoryGuess).toBe('cat-food');
+
+        expect(result.expenses[1].amountPaise).toBe(4000);
+        expect(result.expenses[1].description).toBe('Snacks');
+        expect(result.expenses[1].categoryGuess).toBe('cat-food');
+
+        expect(result.expenses[2].amountPaise).toBe(4000);
+        expect(result.expenses[2].description).toBe('Coke');
+        expect(result.expenses[2].categoryGuess).toBe('cat-food');
+
+        expect(result.totalAmountPaise).toBe(10000); // ₹100
+      }
+
+      const conciseBatch = parseNaturalLanguageInput('auto 50, lunch 120, chai 20');
+      expect(conciseBatch.intent).toBe('log_batch_expenses');
+      if (conciseBatch.intent === 'log_batch_expenses') {
+        expect(conciseBatch.expenses).toHaveLength(3);
+        expect(conciseBatch.totalAmountPaise).toBe(19000); // ₹190
+      }
+    });
+
     it('returns unknown intent for unparseable chatter', () => {
       expect(parseNaturalLanguageInput('hey there')?.intent).toBe('unknown');
       expect(parseNaturalLanguageInput('')?.intent).toBe('unknown');
