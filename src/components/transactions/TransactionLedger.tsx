@@ -134,7 +134,7 @@ export function TransactionLedger({ onOpenAddModal }: { onOpenAddModal?: () => v
                     )}
                   </div>
 
-                  <div className="divide-y divide-slate-100 dark:divide-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40">
                     {txList.map(tx => {
                       const cat = categories.find(c => c.id === tx.categoryId);
                       const isExpense = tx.type === 'expense';

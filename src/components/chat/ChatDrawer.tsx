@@ -361,7 +361,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
                 <div
                   className={`inline-block rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-br-xs'
+                      ? 'bg-slate-900 dark:bg-slate-700 text-white dark:text-slate-100 rounded-br-xs'
                       : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-xs border border-slate-200/80 dark:border-slate-700'
                   }`}
                 >
@@ -412,7 +412,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               </div>
 
               {msg.role === 'user' && (
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 dark:bg-slate-800 text-white mt-0.5 border border-transparent dark:border-slate-700">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 dark:bg-slate-700 text-white mt-0.5 border border-transparent dark:border-slate-600">
                   <User className="h-3.5 w-3.5" />
                 </div>
               )}

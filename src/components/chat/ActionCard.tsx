@@ -23,8 +23,8 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     const catName = getCategoryName(categoryId);
 
     return (
-      <div className="mt-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 p-3.5 shadow-sm text-xs">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+      <div className="mt-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 shadow-sm text-xs">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
           <div className="flex items-center gap-2">
             <span className={`p-1.5 rounded-lg ${
               isRefund
@@ -39,7 +39,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
               <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                 {type === 'income' ? (isRefund ? 'Refund / Cashback' : 'Income') : 'Expense'}
               </span>
-              <span className="text-slate-400 dark:text-slate-500 text-[11px] block">{catName}</span>
+              <span className="text-slate-400 dark:text-slate-400 text-[11px] block">{catName}</span>
             </div>
           </div>
           <div className="text-right">
@@ -53,7 +53,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
 
         <div className="py-2.5 space-y-1">
           <div className="flex justify-between text-slate-600 dark:text-slate-400">
-            <span className="text-slate-400 dark:text-slate-500">Description:</span>
+            <span className="text-slate-400 dark:text-slate-400">Description:</span>
             <span className="font-medium text-slate-800 dark:text-slate-200">{description}</span>
           </div>
           {isOneOff && (
@@ -64,7 +64,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
         </div>
 
         {proposal.status === 'pending' ? (
-          <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
             <Button
               type="button"
               variant="primary"
@@ -86,14 +86,14 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
             </Button>
           </div>
         ) : proposal.status === 'confirmed' ? (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-emerald-700 dark:text-emerald-400 font-medium">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-emerald-700 dark:text-emerald-400 font-medium">
             <span className="flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5" /> Logged to ledger
             </span>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">Updated</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-400">Updated</span>
           </div>
         ) : (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center gap-1 text-slate-400 dark:text-slate-400 font-medium">
             <X className="h-3.5 w-3.5" /> Cancelled
           </div>
         )}
@@ -105,8 +105,8 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     const { transactions, totalAmountPaise } = proposal.payload;
 
     return (
-      <div className="mt-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 p-3.5 shadow-sm text-xs">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+      <div className="mt-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-3.5 shadow-sm text-xs">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-700">
           <div className="flex items-center gap-2">
             <span className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
               <ArrowUpRight className="h-4 w-4" />
@@ -115,7 +115,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
               <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                 Batch Expenses ({transactions.length} items)
               </span>
-              <span className="text-slate-400 dark:text-slate-500 text-[11px] block">Multiple entries detected</span>
+              <span className="text-slate-400 dark:text-slate-400 text-[11px] block">Multiple entries detected</span>
             </div>
           </div>
           <div className="text-right">
@@ -125,12 +125,12 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
           </div>
         </div>
 
-        <div className="py-2 divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="py-2 divide-y divide-slate-100 dark:divide-slate-700">
           {transactions.map((tx, idx) => (
             <div key={idx} className="flex items-center justify-between py-1.5">
               <div>
                 <span className="font-medium text-slate-800 dark:text-slate-200">{tx.description}</span>
-                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">{getCategoryName(tx.categoryId)}</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-400 block">{getCategoryName(tx.categoryId)}</span>
               </div>
               <span className="font-semibold text-slate-700 dark:text-slate-300">-{formatRupees(tx.amountPaise)}</span>
             </div>
@@ -138,7 +138,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
         </div>
 
         {proposal.status === 'pending' ? (
-          <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-700">
             <Button
               type="button"
               variant="primary"
@@ -160,14 +160,14 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
             </Button>
           </div>
         ) : proposal.status === 'confirmed' ? (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-emerald-700 dark:text-emerald-400 font-medium">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between text-emerald-700 dark:text-emerald-400 font-medium">
             <span className="flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5" /> {transactions.length} items logged to ledger
             </span>
-            <span className="text-[10px] text-slate-400 dark:text-slate-500">Updated</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-400">Updated</span>
           </div>
         ) : (
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-700 flex items-center gap-1 text-slate-400 dark:text-slate-400 font-medium">
             <X className="h-3.5 w-3.5" /> Cancelled
           </div>
         )}
@@ -179,7 +179,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     const { originalAmountPaise, newAmountPaise, originalDescription, newDescription } = proposal.payload;
 
     return (
-      <div className="mt-2.5 rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/50 dark:bg-amber-950/40 p-3.5 shadow-sm text-xs">
+      <div className="mt-2.5 rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/70 dark:bg-amber-950/40 p-3.5 shadow-sm text-xs">
         <div className="flex items-center gap-2 pb-2 border-b border-amber-100 dark:border-amber-800/60 font-semibold text-amber-900 dark:text-amber-200">
           <RotateCcw className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <span>Correction Proposal</span>
@@ -194,8 +194,8 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
           <div className="flex items-center justify-between">
             <span className="text-slate-500 dark:text-slate-400">Amount Change:</span>
             <div className="flex items-center gap-1.5 font-bold">
-              <span className="line-through text-slate-400 dark:text-slate-500">{formatRupees(originalAmountPaise)}</span>
-              <ArrowRight className="h-3 w-3 text-slate-400 dark:text-slate-500" />
+              <span className="line-through text-slate-400 dark:text-slate-400">{formatRupees(originalAmountPaise)}</span>
+              <ArrowRight className="h-3 w-3 text-slate-400 dark:text-slate-400" />
               <span className="text-emerald-600 dark:text-emerald-400">{newAmountPaise ? formatRupees(newAmountPaise) : 'N/A'}</span>
             </div>
           </div>
@@ -235,7 +235,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
             <Check className="h-3.5 w-3.5" /> Correction applied
           </div>
         ) : (
-          <div className="pt-2 border-t border-amber-100 dark:border-amber-800/60 flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium">
+          <div className="pt-2 border-t border-amber-100 dark:border-amber-800/60 flex items-center gap-1 text-slate-400 dark:text-slate-400 font-medium">
             <X className="h-3.5 w-3.5" /> Dismissed
           </div>
         )}
@@ -247,7 +247,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     const { description, amountPaise } = proposal.payload;
 
     return (
-      <div className="mt-2.5 rounded-2xl border border-rose-200 dark:border-rose-800/80 bg-rose-50/50 dark:bg-rose-950/40 p-3.5 shadow-sm text-xs">
+      <div className="mt-2.5 rounded-2xl border border-rose-200 dark:border-rose-800/80 bg-rose-50/70 dark:bg-rose-950/40 p-3.5 shadow-sm text-xs">
         <div className="flex items-center gap-2 pb-2 border-b border-rose-100 dark:border-rose-800/60 font-semibold text-rose-900 dark:text-rose-200">
           <AlertCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
           <span>Confirm Undo / Deletion</span>
@@ -265,7 +265,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
               type="button"
               variant="danger"
               size="sm"
-              className="flex-1 py-1.5 text-xs font-semibold gap-1.5"
+              className="flex-1 py-1.5 text-xs font-semibold gap-1.5 bg-rose-600 hover:bg-rose-700 text-white dark:bg-rose-600 dark:hover:bg-rose-500 dark:text-white"
               onClick={() => onConfirm(proposal)}
             >
               <Check className="h-3.5 w-3.5" />
@@ -286,7 +286,7 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
             <Check className="h-3.5 w-3.5" /> Transaction deleted
           </div>
         ) : (
-          <div className="pt-2 border-t border-rose-100 dark:border-rose-800/60 flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium">
+          <div className="pt-2 border-t border-rose-100 dark:border-rose-800/60 flex items-center gap-1 text-slate-400 dark:text-slate-400 font-medium">
             <X className="h-3.5 w-3.5" /> Kept
           </div>
         )}

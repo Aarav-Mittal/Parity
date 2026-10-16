@@ -165,7 +165,7 @@ export function OnboardingModal({ isOpen, onClose }: { isOpen: boolean; onClose:
               </div>
             )}
 
-            <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-3 bg-white dark:bg-slate-900 space-y-3">
+            <div className="rounded-xl border border-dashed border-slate-300 dark:border-slate-700 p-3 bg-slate-50/70 dark:bg-slate-800/40 space-y-3">
               <span className="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Add an upcoming bill</span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <input

@@ -43,12 +43,12 @@ export function CategoryIcon({ iconName, className = 'h-4 w-4', colorHex }: Cate
 
   return (
     <span
-      className="inline-flex items-center justify-center rounded-lg p-1.5"
-      style={{ backgroundColor: colorHex ? `${colorHex}15` : '#f1f5f9' }}
+      className="inline-flex items-center justify-center rounded-lg p-1.5 bg-slate-100 dark:bg-slate-800 transition-colors"
+      style={colorHex ? { backgroundColor: `${colorHex}20` } : undefined}
     >
       <IconComponent
-        className={className}
-        style={{ color: colorHex || '#64748b' }}
+        className={`${className} ${!colorHex ? 'text-slate-500 dark:text-slate-400' : ''}`}
+        style={colorHex ? { color: colorHex } : undefined}
       />
     </span>
   );
