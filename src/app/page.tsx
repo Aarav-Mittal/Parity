@@ -87,15 +87,15 @@ export default function Home() {
       {/* Top Navigation */}
       <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md transition-colors">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs">
-              <Wallet className="h-4 w-4" />
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs shrink-0">
+              <Wallet className="h-5 w-5" />
             </div>
             <div>
-              <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100 block leading-tight">
+              <span className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 block leading-tight">
                 Parity
               </span>
-              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+              <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
                 Student Budgeting & Run-Out Forecast
               </span>
             </div>
