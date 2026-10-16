@@ -23,15 +23,19 @@ import {
   UserCheck,
   CalendarDays,
   Calculator,
+  ArrowLeft,
 } from 'lucide-react';
 
 export default function Home() {
   const {
     isOnboarded,
     isInitialized,
+    isDemoMode,
+    hasUserBudget,
     todayISO,
     setTodayISO,
-    resetToDemo,
+    switchToDemo,
+    switchToUserBudget,
     resetToCleanSlate,
   } = useMoney();
 
@@ -115,16 +119,32 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetToDemo}
-                title="Reset to Aryan's sample student data"
-                className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-              >
-                <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                <span className="hidden md:inline">Demo Persona (Aryan)</span>
-              </Button>
+              {isDemoMode && hasUserBudget ? (
+                /* When in Demo mode, show quick button to return to My Budget */
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={switchToUserBudget}
+                  title="Return to your personal ledger"
+                  className="text-xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-semibold gap-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" />
+                  <span>My Budget</span>
+                </Button>
+              ) : (
+                /* When in User mode, show option to inspect Demo */
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={switchToDemo}
+                  title="View Aryan's sample student data"
+                  className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
+                >
+                  <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
+                  <span className="hidden md:inline">Demo Persona (Aryan)</span>
+                </Button>
+              )}
+
               <Button
                 variant="ghost"
                 size="sm"
@@ -174,7 +194,7 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={resetToDemo}
+                onClick={switchToDemo}
                 className="w-full sm:w-auto dark:border-slate-700 dark:hover:bg-slate-800"
               >
                 <UserCheck className="h-4 w-4" /> Load Aryan's Demo Profile
@@ -184,6 +204,37 @@ export default function Home() {
         ) : (
           /* Active Dashboard View */
           <div className="space-y-6">
+            {/* Demo Mode Notice Banner (If user is viewing Aryan's profile) */}
+            {isDemoMode && (
+              <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/80 p-3.5 text-xs text-indigo-950 dark:text-indigo-200 shadow-2xs">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                  <span>
+                    Viewing <strong>Aryan's Sample Profile</strong> (₹8,000 allowance).
+                    {hasUserBudget ? ' Your personal ledger is safely saved.' : ''}
+                  </span>
+                </div>
+                {hasUserBudget ? (
+                  <Button
+                    size="sm"
+                    onClick={switchToUserBudget}
+                    className="text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 py-1"
+                  >
+                    <ArrowLeft className="h-3.5 w-3.5" />
+                    Return to My Budget
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={() => setIsOnboardingOpen(true)}
+                    className="text-xs gap-1.5 py-1"
+                  >
+                    Set Up My Own Budget
+                  </Button>
+                )}
+              </div>
+            )}
+
             {/* Survival Dashboard Hero */}
             <div id="dashboard-top">
               <DashboardHero />

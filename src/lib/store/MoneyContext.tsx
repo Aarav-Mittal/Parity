@@ -28,6 +28,8 @@ interface MoneyContextType {
   forecast: ForecastResult | null;
   isOnboarded: boolean;
   isInitialized: boolean;
+  isDemoMode: boolean;
+  hasUserBudget: boolean;
   todayISO: string;
   setTodayISO: (dateISO: string) => void;
   completeOnboarding: (data: {
@@ -55,16 +57,22 @@ interface MoneyContextType {
   togglePauseRecurringExpense: (id: string) => void;
   markRecurringExpensePaid: (id: string) => void;
   deleteRecurringExpense: (id: string) => void;
+  switchToDemo: () => void;
+  switchToUserBudget: () => void;
   resetToDemo: () => void;
   resetToCleanSlate: () => void;
 }
 
 const MoneyContext = createContext<MoneyContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'ai_money_tracker_state_v2';
+const STORAGE_ACTIVE_KEY = 'ai_money_tracker_state_v2';
+const STORAGE_USER_KEY = 'parity_user_budget_v2';
 
 export function MoneyProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [hasUserBudget, setHasUserBudget] = useState(false);
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [cycle, setCycle] = useState<AllowanceCycle | null>(null);
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
@@ -74,18 +82,33 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
   // Injected today reference date (default to current date YYYY-MM-DD or Oct 15, 2026 for demo consistency)
   const [todayISO, setTodayISO] = useState<string>('2026-10-15');
 
-  // Load from localStorage or start clean slate so user sees the decision landing page
+  // Load from localStorage or start clean slate
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        const parsed = JSON.parse(saved);
+      const savedUser = localStorage.getItem(STORAGE_USER_KEY);
+      const savedActive = localStorage.getItem(STORAGE_ACTIVE_KEY);
+
+      if (savedUser) {
+        setHasUserBudget(true);
+      }
+
+      if (savedActive) {
+        const parsed = JSON.parse(savedActive);
         setProfile(parsed.profile);
         setCycle(parsed.cycle);
         setCategories(parsed.categories || DEFAULT_CATEGORIES);
         setTransactions(parsed.transactions || []);
         setRecurringExpenses(parsed.recurringExpenses || []);
         if (parsed.todayISO) setTodayISO(parsed.todayISO);
+
+        const isDemo = Boolean(parsed.isDemoMode || parsed.profile?.id === 'usr-aryan');
+        setIsDemoMode(isDemo);
+
+        // If the active profile is the user's own budget, ensure it's mirrored in STORAGE_USER_KEY
+        if (!isDemo && parsed.profile && parsed.profile.id !== 'usr-aryan') {
+          setHasUserBudget(true);
+          localStorage.setItem(STORAGE_USER_KEY, savedActive);
+        }
       } else {
         // Clean slate by default - students land on the decision page to load Aryan or set up budget
         setProfile(null);
@@ -93,6 +116,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         setCategories(DEFAULT_CATEGORIES);
         setTransactions([]);
         setRecurringExpenses([]);
+        setIsDemoMode(false);
       }
     } catch (e) {
       console.warn('Failed to load local storage state', e);
@@ -101,29 +125,36 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
       setCategories(DEFAULT_CATEGORIES);
       setTransactions([]);
       setRecurringExpenses([]);
+      setIsDemoMode(false);
     }
     setIsInitialized(true);
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // Save active state to localStorage whenever it changes
   useEffect(() => {
     if (!isInitialized) return;
     try {
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({
-          profile,
-          cycle,
-          categories,
-          transactions,
-          recurringExpenses,
-          todayISO,
-        })
-      );
+      const stateObj = {
+        profile,
+        cycle,
+        categories,
+        transactions,
+        recurringExpenses,
+        todayISO,
+        isDemoMode,
+      };
+
+      localStorage.setItem(STORAGE_ACTIVE_KEY, JSON.stringify(stateObj));
+
+      // If user is editing their own budget (not demo mode), also save to persistent user key
+      if (!isDemoMode && profile && profile.id !== 'usr-aryan') {
+        localStorage.setItem(STORAGE_USER_KEY, JSON.stringify(stateObj));
+        setHasUserBudget(true);
+      }
     } catch (e) {
       console.error('Failed to save to localStorage', e);
     }
-  }, [profile, cycle, categories, transactions, recurringExpenses, todayISO, isInitialized]);
+  }, [profile, cycle, categories, transactions, recurringExpenses, todayISO, isDemoMode, isInitialized]);
 
   // Derived: Is the user onboarded?
   const isOnboarded = useMemo(() => {
@@ -197,34 +228,50 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
       setCycle(newCycle);
       setRecurringExpenses(newRecurring);
       setTransactions([]); // Start with fresh clean ledger
+      setIsDemoMode(false);
+      setHasUserBudget(true);
+
+      try {
+        localStorage.setItem(
+          STORAGE_USER_KEY,
+          JSON.stringify({
+            profile: newProfile,
+            cycle: newCycle,
+            categories,
+            transactions: [],
+            recurringExpenses: newRecurring,
+            todayISO,
+            isDemoMode: false,
+          })
+        );
+      } catch (err) {
+        console.error('Failed to store initial user budget', err);
+      }
     },
-    [todayISO]
+    [todayISO, categories]
   );
 
   // Handler: Add Transaction
-  const addTransaction = useCallback(
-    (tx: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
-      const newTx: Transaction = {
-        ...tx,
-        id: `tx-${Date.now()}`,
-        userId: profile?.id || 'user-me',
-        createdAt: new Date().toISOString(),
-      };
-      setTransactions(prev => [newTx, ...prev]);
-    },
-    [profile]
-  );
+  const addTransaction = useCallback((tx: Omit<Transaction, 'id' | 'userId' | 'createdAt'>) => {
+    const newTx: Transaction = {
+      ...tx,
+      id: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+      userId: profile?.id || 'user-me',
+      createdAt: new Date().toISOString(),
+    };
+    setTransactions(prev => [newTx, ...prev]);
+  }, [profile]);
 
   // Handler: Edit Transaction
   const editTransaction = useCallback((id: string, updates: Partial<Transaction>) => {
     setTransactions(prev =>
-      prev.map(t => (t.id === id ? { ...t, ...updates } : t))
+      prev.map(tx => (tx.id === id ? { ...tx, ...updates } : tx))
     );
   }, []);
 
   // Handler: Delete Transaction
   const deleteTransaction = useCallback((id: string) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
+    setTransactions(prev => prev.filter(tx => tx.id !== id));
   }, []);
 
   // Handler: Add Recurring Expense
@@ -236,7 +283,9 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
       categoryId?: string | null;
       frequency?: 'monthly' | 'weekly';
     }) => {
-      const newRec: RecurringExpense = {
+      if (!cycle) return;
+      const { nextPayoutDate } = cycle;
+      const newExp: RecurringExpense = {
         id: `rec-${Date.now()}`,
         userId: profile?.id || 'user-me',
         categoryId: exp.categoryId || null,
@@ -244,13 +293,13 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         amountPaise: exp.amountPaise,
         frequency: exp.frequency || 'monthly',
         dueDayOfMonth: exp.dueDayOfMonth,
-        nextDueDate: cycle?.nextPayoutDate || todayISO,
+        nextDueDate: nextPayoutDate,
         isPaused: false,
         lastPaidDate: null,
       };
-      setRecurringExpenses(prev => [...prev, newRec]);
+      setRecurringExpenses(prev => [...prev, newExp]);
     },
-    [profile, cycle, todayISO]
+    [cycle, profile]
   );
 
   // Handler: Toggle Pause Recurring Expense
@@ -260,32 +309,35 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
-  // Handler: Mark Recurring Expense as Paid (Deduplication!)
+  // Handler: Mark Recurring Expense as Paid in current cycle
   const markRecurringExpensePaid = useCallback(
     (id: string) => {
-      const target = recurringExpenses.find(r => r.id === id);
-      if (!target) return;
+      const targetBill = recurringExpenses.find(r => r.id === id);
+      if (!targetBill) return;
 
-      // 1. Mark lastPaidDate on recurring expense
+      // 1. Update bill's lastPaidDate
       setRecurringExpenses(prev =>
         prev.map(r => (r.id === id ? { ...r, lastPaidDate: todayISO } : r))
       );
 
-      // 2. Add ledger transaction linked to this recurring bill
-      const newTx: Transaction = {
+      // 2. Automatically log matching transaction in ledger
+      const paidTx: Transaction = {
         id: `tx-bill-${Date.now()}`,
         userId: profile?.id || 'user-me',
-        categoryId: target.categoryId,
+        categoryId: targetBill.categoryId,
+        recurringExpenseId: targetBill.id,
         type: 'expense',
-        amountPaise: target.amountPaise,
-        description: `${target.name} (Bill Payment)`,
+        amountPaise: targetBill.amountPaise,
+        description: targetBill.name,
         transactionDate: todayISO,
         createdAt: new Date().toISOString(),
-        recurringExpenseId: target.id,
+        rawInput: `Bill payment for ${targetBill.name}`,
+        isCorrection: false,
+        isOneOff: false,
       };
-      setTransactions(prev => [newTx, ...prev]);
+      setTransactions(prev => [paidTx, ...prev]);
     },
-    [recurringExpenses, todayISO, profile]
+    [recurringExpenses, profile, todayISO]
   );
 
   // Handler: Delete Recurring Expense
@@ -293,17 +345,67 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
     setRecurringExpenses(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  // Handler: Reset to Demo Persona (Aryan)
-  const resetToDemo = useCallback(() => {
+  // Handler: Switch to Demo Persona (Aryan) with safe backup of user budget
+  const switchToDemo = useCallback(() => {
+    // If user has an active real budget, back it up to STORAGE_USER_KEY first
+    if (!isDemoMode && profile && profile.id !== 'usr-aryan') {
+      try {
+        localStorage.setItem(
+          STORAGE_USER_KEY,
+          JSON.stringify({
+            profile,
+            cycle,
+            categories,
+            transactions,
+            recurringExpenses,
+            todayISO,
+            isDemoMode: false,
+          })
+        );
+        setHasUserBudget(true);
+      } catch (err) {
+        console.error('Failed to backup user budget', err);
+      }
+    }
+
     setProfile(ARYAN_PROFILE);
     setCycle(ARYAN_CYCLE);
     setCategories(DEFAULT_CATEGORIES);
     setTransactions(ARYAN_TRANSACTIONS);
     setRecurringExpenses(ARYAN_RECURRING);
     setTodayISO('2026-10-15');
+    setIsDemoMode(true);
+  }, [isDemoMode, profile, cycle, categories, transactions, recurringExpenses, todayISO]);
+
+  // Handler: Switch back to User's Actual Personal Budget
+  const switchToUserBudget = useCallback(() => {
+    try {
+      const savedUser = localStorage.getItem(STORAGE_USER_KEY);
+      if (savedUser) {
+        const parsed = JSON.parse(savedUser);
+        setProfile(parsed.profile);
+        setCycle(parsed.cycle);
+        setCategories(parsed.categories || DEFAULT_CATEGORIES);
+        setTransactions(parsed.transactions || []);
+        setRecurringExpenses(parsed.recurringExpenses || []);
+        if (parsed.todayISO) setTodayISO(parsed.todayISO);
+        setIsDemoMode(false);
+      } else {
+        // If no user budget exists, reset to clean slate
+        setProfile(null);
+        setCycle(null);
+        setTransactions([]);
+        setRecurringExpenses([]);
+        setCategories(DEFAULT_CATEGORIES);
+        setTodayISO(formatISODate(new Date()));
+        setIsDemoMode(false);
+      }
+    } catch (e) {
+      console.error('Failed to restore user budget', e);
+    }
   }, []);
 
-  // Handler: Reset to Clean Slate (Triggers Onboarding)
+  // Handler: Reset to Clean Slate (Starts New Budget)
   const resetToCleanSlate = useCallback(() => {
     setProfile(null);
     setCycle(null);
@@ -311,7 +413,10 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
     setRecurringExpenses([]);
     setCategories(DEFAULT_CATEGORIES);
     setTodayISO(formatISODate(new Date()));
-    localStorage.removeItem(STORAGE_KEY);
+    setIsDemoMode(false);
+    setHasUserBudget(false);
+    localStorage.removeItem(STORAGE_ACTIVE_KEY);
+    localStorage.removeItem(STORAGE_USER_KEY);
   }, []);
 
   return (
@@ -325,6 +430,8 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         forecast,
         isOnboarded,
         isInitialized,
+        isDemoMode,
+        hasUserBudget,
         todayISO,
         setTodayISO,
         completeOnboarding,
@@ -335,7 +442,9 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         togglePauseRecurringExpense,
         markRecurringExpensePaid,
         deleteRecurringExpense,
-        resetToDemo,
+        switchToDemo,
+        switchToUserBudget,
+        resetToDemo: switchToDemo,
         resetToCleanSlate,
       }}
     >
