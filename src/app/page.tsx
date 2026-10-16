@@ -93,7 +93,7 @@ export default function Home() {
             </div>
             <div>
               <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100 block leading-tight">
-                Money Survival
+                Parity
               </span>
               <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 Student Budgeting & Run-Out Forecast

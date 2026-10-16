@@ -30,7 +30,7 @@ interface ChatDrawerProps {
 const INITIAL_WELCOME_MESSAGE: ChatMessage = {
   id: 'msg-welcome',
   role: 'assistant',
-  content: "Hey! I'm your Money Survival assistant. You can log an expense in natural language (e.g. \"spent 120 on auto\" or \"chai 30\"), or ask me questions like \"how much can I spend today?\".",
+  content: "Hey! I'm your Parity assistant. You can log an expense in natural language (e.g. \"spent 120 on auto\" or \"chai 30\"), or ask me questions like \"how much can I spend today?\".",
   createdAt: new Date().toISOString(),
 };
 
@@ -289,7 +289,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Money Survival AI</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Parity AI</h3>
                 {activeEngine?.provider === 'groq' ? (
                   <span
                     className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
