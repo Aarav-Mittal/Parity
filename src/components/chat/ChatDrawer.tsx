@@ -280,35 +280,35 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
       />
 
       {/* Slide-over Drawer */}
-      <aside className="relative flex w-full max-w-md flex-col bg-white shadow-2xl z-10 h-full border-l border-slate-200 animate-in slide-in-from-right duration-200">
+      <aside className="relative flex w-full max-w-md flex-col bg-white dark:bg-slate-900 shadow-2xl z-10 h-full border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-200">
         {/* Drawer Header */}
-        <header className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/70">
+        <header className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/90">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-sm">
-              <Sparkles className="h-4 w-4" />
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 dark:bg-slate-800 text-white shadow-sm border border-transparent dark:border-slate-700">
+              <Sparkles className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-slate-900 text-sm">Money Survival AI</h3>
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Money Survival AI</h3>
                 {activeEngine?.provider === 'groq' ? (
                   <span
-                    className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300"
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
                     title={`Groq AI (${activeEngine.model?.replace('qwen/', '') || 'qwen3.8-27b'})`}
                     aria-label={`Groq AI (${activeEngine.model?.replace('qwen/', '') || 'qwen3.8-27b'})`}
                   >
-                    <Sparkles className="h-3 w-3 text-emerald-600" />
+                    <Sparkles className="h-3 w-3 text-emerald-600 dark:text-emerald-400" />
                   </span>
                 ) : activeEngine?.provider === 'fallback' ? (
                   <span
-                    className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 text-amber-700 border border-amber-300"
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
                     title="Offline Deterministic Engine"
                     aria-label="Offline Deterministic Engine"
                   >
-                    <Cpu className="h-3 w-3 text-amber-600" />
+                    <Cpu className="h-3 w-3 text-amber-600 dark:text-amber-400" />
                   </span>
                 ) : (
                   <span
-                    className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 text-slate-500 border border-slate-200"
+                    className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700"
                     title="Ready"
                     aria-label="Ready"
                   >
@@ -316,8 +316,8 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500">
-                Safe Daily Spend: <span className="font-semibold text-slate-700">{formatRupees(forecast ? forecast.safeDailySpendPaise : 0)}/day</span>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                Safe Daily Spend: <span className="font-semibold text-slate-700 dark:text-slate-300">{formatRupees(forecast ? forecast.safeDailySpendPaise : 0)}/day</span>
               </p>
             </div>
           </div>
@@ -328,7 +328,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               onClick={handleClearHistory}
               title="Clear chat history"
               aria-label="Clear chat history"
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <RotateCcw className="h-4 w-4" />
             </button>
@@ -337,7 +337,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               onClick={onClose}
               title="Close drawer"
               aria-label="Close chat drawer"
-              className="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
             >
               <X className="h-5 w-5" />
             </button>
@@ -352,7 +352,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               {msg.role === 'assistant' && (
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-700 border border-slate-200 mt-0.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 mt-0.5">
                   <Bot className="h-3.5 w-3.5" />
                 </div>
               )}
@@ -361,8 +361,8 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
                 <div
                   className={`inline-block rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed ${
                     msg.role === 'user'
-                      ? 'bg-slate-900 text-white rounded-br-xs'
-                      : 'bg-slate-100 text-slate-800 rounded-bl-xs border border-slate-200/80'
+                      ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 rounded-br-xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 rounded-bl-xs border border-slate-200/80 dark:border-slate-700'
                   }`}
                 >
                   <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -373,7 +373,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
                   <div className="flex items-center gap-1.5 mt-1 px-1">
                     {msg.providerUsed === 'groq' ? (
                       <span
-                        className="inline-flex items-center justify-center text-emerald-600 hover:text-emerald-700 transition-colors"
+                        className="inline-flex items-center justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 transition-colors"
                         title={`Groq AI (${msg.modelName?.replace('qwen/', '') || 'qwen3.8-27b'})`}
                         aria-label={`Groq AI (${msg.modelName?.replace('qwen/', '') || 'qwen3.8-27b'})`}
                       >
@@ -381,7 +381,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
                       </span>
                     ) : (
                       <span
-                        className="inline-flex items-center justify-center text-slate-400 hover:text-slate-500 transition-colors"
+                        className="inline-flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-slate-500 transition-colors"
                         title="Offline Deterministic Engine"
                         aria-label="Offline Deterministic Engine"
                       >
@@ -391,7 +391,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
 
                     {msg.debugNote && (
                       <span
-                        className="text-[10px] text-amber-700 bg-amber-50 rounded px-1.5 py-0.2 border border-amber-200"
+                        className="text-[10px] text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 rounded px-1.5 py-0.2 border border-amber-200 dark:border-amber-800"
                         title={msg.debugNote}
                       >
                         {msg.debugNote}
@@ -412,7 +412,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               </div>
 
               {msg.role === 'user' && (
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white mt-0.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-900 dark:bg-slate-800 text-white mt-0.5 border border-transparent dark:border-slate-700">
                   <User className="h-3.5 w-3.5" />
                 </div>
               )}
@@ -421,10 +421,10 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
 
           {isLoading && (
             <div className="flex gap-2.5 items-center">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
                 <Bot className="h-3.5 w-3.5 animate-pulse" />
               </div>
-              <div className="rounded-2xl rounded-bl-xs bg-slate-100 border border-slate-200/80 px-3.5 py-2 text-xs text-slate-500 flex items-center gap-1.5">
+              <div className="rounded-2xl rounded-bl-xs bg-slate-100 dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 px-3.5 py-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" />
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.2s]" />
                 <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:0.4s]" />
@@ -437,14 +437,14 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
         </div>
 
         {/* Suggested Quick Prompts */}
-        <div className="px-4 py-2 border-t border-slate-100 bg-slate-50/50">
+        <div className="px-4 py-2 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/60">
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {SUGGESTED_PROMPTS.map((p, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => handleSendMessage(p.query)}
-                className="shrink-0 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 transition-colors cursor-pointer"
+                className="shrink-0 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100 transition-colors cursor-pointer"
               >
                 {p.label}
               </button>
@@ -458,7 +458,7 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
             e.preventDefault();
             handleSendMessage();
           }}
-          className="p-3 border-t border-slate-200 bg-white"
+          className="p-3 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
         >
           <div className="relative flex items-center">
             <input
@@ -467,18 +467,18 @@ export function ChatDrawer({ isOpen, onClose, initialPrompt }: ChatDrawerProps) 
               value={inputValue}
               onChange={e => setInputValue(e.target.value)}
               placeholder="e.g. spent 120 on auto, chai 30..."
-              className="w-full rounded-xl border border-slate-200 bg-slate-50/60 pl-3.5 pr-11 py-2.5 text-xs text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900 transition-colors"
+              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 pl-3.5 pr-11 py-2.5 text-xs text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:bg-white dark:focus:bg-slate-800 focus:border-slate-900 dark:focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-900 dark:focus:ring-slate-400 transition-colors"
             />
             <button
               type="submit"
               disabled={!inputValue.trim() || isLoading}
-              className="absolute right-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 transition-colors cursor-pointer"
+              className="absolute right-1.5 flex h-7 w-7 items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors cursor-pointer"
             >
               <Send className="h-3.5 w-3.5" />
             </button>
           </div>
-          <p className="mt-1.5 text-center text-[10px] text-slate-400">
-            Powered by Groq Llama 3.3 • Zero financial hallucination
+          <p className="mt-1.5 text-center text-[10px] text-slate-400 dark:text-slate-500">
+            AI extracts data. Final ledger calculations are 100% deterministic math.
           </p>
         </form>
       </aside>

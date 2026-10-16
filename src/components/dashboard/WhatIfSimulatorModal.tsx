@@ -134,14 +134,14 @@ export function WhatIfSimulatorModal({
     >
       <div className="space-y-5">
         {/* Navigation Tabs */}
-        <div className="flex border-b border-slate-200 gap-1 pb-1">
+        <div className="flex border-b border-slate-200 dark:border-slate-800 gap-1 pb-1">
           <button
             type="button"
             onClick={() => setActiveTab('purchase')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
               activeTab === 'purchase'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <ShoppingBag className="h-3.5 w-3.5" />
@@ -153,8 +153,8 @@ export function WhatIfSimulatorModal({
             onClick={() => setActiveTab('daily')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
               activeTab === 'daily'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <TrendingDown className="h-3.5 w-3.5" />
@@ -166,14 +166,14 @@ export function WhatIfSimulatorModal({
             onClick={() => setActiveTab('recommendations')}
             className={`flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${
               activeTab === 'recommendations'
-                ? 'bg-slate-900 text-white'
-                : 'text-slate-600 hover:bg-slate-100'
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'
             }`}
           >
             <Lightbulb className="h-3.5 w-3.5 text-amber-500" />
             <span>Smart Recommendations</span>
             {recommendations.length > 0 && (
-              <span className="rounded-full bg-amber-100 px-1.5 py-0.2 text-[10px] font-bold text-amber-800">
+              <span className="rounded-full bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.2 text-[10px] font-bold text-amber-800 dark:text-amber-300">
                 {recommendations.length}
               </span>
             )}
@@ -185,7 +185,7 @@ export function WhatIfSimulatorModal({
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                   Item or Purpose
                 </label>
                 <Input
@@ -196,7 +196,7 @@ export function WhatIfSimulatorModal({
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-slate-700 block mb-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
                   Price in Rupees (₹)
                 </label>
                 <Input
@@ -212,7 +212,7 @@ export function WhatIfSimulatorModal({
 
             {/* Quick Amount Pills */}
             <div className="flex flex-wrap items-center gap-1.5 text-xs">
-              <span className="text-slate-500 text-[11px] font-medium mr-1">
+              <span className="text-slate-500 dark:text-slate-400 text-[11px] font-medium mr-1">
                 Quick test:
               </span>
               {[250, 500, 1000, 1500, 2000].map(amt => (
@@ -220,7 +220,7 @@ export function WhatIfSimulatorModal({
                   key={amt}
                   type="button"
                   onClick={() => setPurchaseAmount(String(amt))}
-                  className="rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1 text-slate-700 hover:border-slate-400 hover:bg-white transition-colors cursor-pointer font-medium text-xs"
+                  className="rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2.5 py-1 text-slate-700 dark:text-slate-200 hover:border-slate-400 dark:hover:border-slate-500 hover:bg-white dark:hover:bg-slate-700 transition-colors cursor-pointer font-medium text-xs"
                 >
                   ₹{amt}
                 </button>
@@ -232,19 +232,19 @@ export function WhatIfSimulatorModal({
               <div
                 className={`rounded-2xl border p-4 ${
                   affordabilityVerdict.status === 'safe'
-                    ? 'border-emerald-200 bg-emerald-50/80 text-emerald-950'
+                    ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200'
                     : affordabilityVerdict.status === 'tight'
-                    ? 'border-amber-200 bg-amber-50/80 text-amber-950'
-                    : 'border-rose-200 bg-rose-50/80 text-rose-950'
+                    ? 'border-amber-200 dark:border-amber-800/80 bg-amber-50/80 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200'
+                    : 'border-rose-200 dark:border-rose-800/80 bg-rose-50/80 dark:bg-rose-950/40 text-rose-950 dark:text-rose-200'
                 }`}
               >
                 <div className="flex items-start gap-2.5">
                   {affordabilityVerdict.status === 'safe' ? (
-                    <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
                   ) : affordabilityVerdict.status === 'tight' ? (
-                    <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                    <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   ) : (
-                    <AlertCircle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+                    <AlertCircle className="h-5 w-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
                   )}
                   <div>
                     <h4 className="text-sm font-bold">
@@ -263,12 +263,12 @@ export function WhatIfSimulatorModal({
         {/* Tab 2: Adjust Daily Spend */}
         {activeTab === 'daily' && (
           <div className="space-y-4">
-            <div className="rounded-xl bg-slate-50 border border-slate-200/80 p-3.5 text-xs text-slate-600 leading-relaxed">
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 p-3.5 text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
               Test how spending slightly more or less each day impacts your final balance by payout day ({currentForecast.daysRemaining} days remaining).
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-semibold text-slate-700">Daily adjustment:</span>
+              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Daily adjustment:</span>
               {[-100, -50, -30, 0, 30, 50, 100].map(delta => (
                 <button
                   key={delta}
@@ -276,8 +276,8 @@ export function WhatIfSimulatorModal({
                   onClick={() => setDailyDeltaRupees(delta)}
                   className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-all cursor-pointer ${
                     dailyDeltaRupees === delta
-                      ? 'bg-slate-900 text-white shadow-xs'
-                      : 'border border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 shadow-xs'
+                      : 'border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700'
                   }`}
                 >
                   {delta === 0 ? 'No change' : delta > 0 ? `+₹${delta}/day` : `-₹${Math.abs(delta)}/day`}
@@ -293,9 +293,9 @@ export function WhatIfSimulatorModal({
                 step="10"
                 value={dailyDeltaRupees}
                 onChange={e => setDailyDeltaRupees(parseInt(e.target.value, 10))}
-                className="w-full accent-slate-900"
+                className="w-full accent-slate-900 dark:accent-slate-100"
               />
-              <span className="font-mono text-xs font-bold text-slate-800 w-24 text-right">
+              <span className="font-mono text-xs font-bold text-slate-800 dark:text-slate-200 w-24 text-right">
                 {dailyDeltaRupees === 0
                   ? '₹0/day'
                   : dailyDeltaRupees > 0
@@ -310,23 +310,23 @@ export function WhatIfSimulatorModal({
         {activeTab === 'recommendations' && (
           <div className="space-y-3">
             {recommendations.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-500">
+              <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-xs text-slate-500 dark:text-slate-400">
                 You're already following optimal spending habits for this cycle!
               </div>
             ) : (
               recommendations.map(rec => (
                 <div
                   key={rec.id}
-                  className="rounded-xl border border-slate-200 bg-slate-50/50 p-3.5 transition-all hover:bg-white"
+                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-3.5 transition-all hover:bg-white dark:hover:bg-slate-800"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-2.5">
                       <Lightbulb className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                       <div>
-                        <h4 className="text-xs font-bold text-slate-900">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-slate-100">
                           {rec.title}
                         </h4>
-                        <p className="mt-1 text-xs text-slate-600 leading-relaxed">
+                        <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                           {rec.explanation}
                         </p>
                       </div>
@@ -349,7 +349,7 @@ export function WhatIfSimulatorModal({
                           setActiveTab('daily');
                         }
                       }}
-                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-slate-900 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                      className="shrink-0 inline-flex items-center gap-1 rounded-lg bg-slate-900 dark:bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 transition-colors cursor-pointer"
                     >
                       <span>Simulate</span>
                       <ArrowRight className="h-3 w-3" />
@@ -362,16 +362,16 @@ export function WhatIfSimulatorModal({
         )}
 
         {/* Impact Comparison Box */}
-        <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-800/40 p-4">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Scenario Comparison
             </h4>
             {isSimulating && (
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors cursor-pointer"
               >
                 <RotateCcw className="h-3 w-3" />
                 <span>Reset Scenario</span>
@@ -381,35 +381,35 @@ export function WhatIfSimulatorModal({
 
           <div className="grid grid-cols-3 gap-3 text-center">
             {/* Safe Daily Spend */}
-            <div className="rounded-xl bg-white border border-slate-200/80 p-2.5 shadow-2xs">
-              <span className="text-[10px] uppercase font-semibold text-slate-400 block">
+            <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 shadow-2xs">
+              <span className="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-500 block">
                 Safe Daily Spend
               </span>
               <div className="mt-1 flex items-center justify-center gap-1.5">
-                <span className="text-xs font-medium text-slate-400 line-through">
+                <span className="text-xs font-medium text-slate-400 dark:text-slate-500 line-through">
                   {formatPaiseToINR(currentForecast.safeDailySpendPaise)}
                 </span>
-                <span className="text-sm font-bold text-slate-900">
+                <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                   {formatPaiseToINR(simulatedForecast.safeDailySpendPaise)}
                 </span>
               </div>
             </div>
 
             {/* Projected End Balance */}
-            <div className="rounded-xl bg-white border border-slate-200/80 p-2.5 shadow-2xs">
-              <span className="text-[10px] uppercase font-semibold text-slate-400 block">
+            <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 shadow-2xs">
+              <span className="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-500 block">
                 Projected Balance
               </span>
               <div className="mt-1 flex items-center justify-center gap-1.5">
-                <span className="text-xs font-medium text-slate-400 line-through">
+                <span className="text-xs font-medium text-slate-400 dark:text-slate-500 line-through">
                   {formatPaiseToINR(currentForecast.projectedEndBalancePaise)}
                 </span>
                 <span
                   className={`text-sm font-bold ${
                     simulatedForecast.projectedEndBalancePaise <
                     cycle.targetReservePaise
-                      ? 'text-amber-600'
-                      : 'text-emerald-700'
+                      ? 'text-amber-600 dark:text-amber-400'
+                      : 'text-emerald-700 dark:text-emerald-400'
                   }`}
                 >
                   {formatPaiseToINR(simulatedForecast.projectedEndBalancePaise)}
@@ -418,8 +418,8 @@ export function WhatIfSimulatorModal({
             </div>
 
             {/* Survival Status */}
-            <div className="rounded-xl bg-white border border-slate-200/80 p-2.5 shadow-2xs flex flex-col items-center justify-center">
-              <span className="text-[10px] uppercase font-semibold text-slate-400 block mb-1">
+            <div className="rounded-xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 p-2.5 shadow-2xs flex flex-col items-center justify-center">
+              <span className="text-[10px] uppercase font-semibold text-slate-400 dark:text-slate-500 block mb-1">
                 Survival Status
               </span>
               {getStatusBadge(simulatedForecast.status)}
@@ -428,7 +428,7 @@ export function WhatIfSimulatorModal({
         </div>
 
         {/* Modal Footer */}
-        <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
           <Button variant="outline" onClick={onClose}>
             Close Simulator
           </Button>

@@ -13,24 +13,22 @@ import { OnboardingModal } from '@/components/onboarding/OnboardingModal';
 import { Button } from '@/components/ui/Button';
 import { ChatDrawer } from '@/components/chat/ChatDrawer';
 import { MobileBottomNav } from '@/components/navigation/MobileBottomNav';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { TransactionType } from '@/types/finance';
 import {
   Wallet,
   Plus,
-  ArrowUpRight,
   Sparkles,
   RotateCcw,
   UserCheck,
   CalendarDays,
-  ShieldAlert,
   Calculator,
 } from 'lucide-react';
 
 export default function Home() {
   const {
     isOnboarded,
-    profile,
-    cycle,
+    isInitialized,
     todayISO,
     setTodayISO,
     resetToDemo,
@@ -56,13 +54,8 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  const openAddExpense = () => {
-    setAddTxDefaultType('expense');
-    setIsAddTxOpen(true);
-  };
-
-  const openAddIncome = () => {
-    setAddTxDefaultType('income');
+  const openAddTransaction = (type: TransactionType = 'expense') => {
+    setAddTxDefaultType(type);
     setIsAddTxOpen(true);
   };
 
@@ -85,35 +78,39 @@ export default function Home() {
     }
   };
 
+  if (!isInitialized) {
+    return <div className="min-h-screen bg-slate-50 dark:bg-slate-950" />;
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-28 sm:pb-16">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200 pb-28 sm:pb-16">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-slate-200/80 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md transition-colors">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3 sm:px-6">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 text-white shadow-xs">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs">
               <Wallet className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-sm font-bold tracking-tight text-slate-900 block leading-tight">
+              <span className="text-sm font-bold tracking-tight text-slate-900 dark:text-slate-100 block leading-tight">
                 Money Survival
               </span>
-              <span className="text-[11px] text-slate-500 font-medium">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                 Student Budgeting & Run-Out Forecast
               </span>
             </div>
           </div>
 
-          {/* Dev / Testing Controls */}
+          {/* Dev / Testing Controls & Theme Toggle */}
           <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-600">
-              <CalendarDays className="h-3.5 w-3.5 text-slate-400" />
+            <div className="hidden sm:flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 px-2 py-1 text-xs text-slate-600 dark:text-slate-300">
+              <CalendarDays className="h-3.5 w-3.5 text-slate-400 dark:text-slate-500" />
               <span>Simulated Date:</span>
               <input
                 type="date"
                 value={todayISO}
                 onChange={e => setTodayISO(e.target.value)}
-                className="bg-transparent font-mono text-xs text-slate-900 font-semibold focus:outline-hidden"
+                className="bg-transparent font-mono text-xs text-slate-900 dark:text-slate-100 font-semibold focus:outline-hidden"
               />
             </div>
 
@@ -123,9 +120,9 @@ export default function Home() {
                 size="sm"
                 onClick={resetToDemo}
                 title="Reset to Aryan's sample student data"
-                className="text-xs text-slate-600"
+                className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               >
-                <UserCheck className="h-3.5 w-3.5 text-slate-500" />
+                <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                 <span className="hidden md:inline">Demo Persona (Aryan)</span>
               </Button>
               <Button
@@ -136,11 +133,16 @@ export default function Home() {
                   setIsOnboardingOpen(true);
                 }}
                 title="Start clean slate onboarding"
-                className="text-xs text-slate-600"
+                className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               >
-                <RotateCcw className="h-3.5 w-3.5 text-slate-500" />
+                <RotateCcw className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                 <span className="hidden md:inline">New Budget</span>
               </Button>
+            </div>
+
+            {/* Dark / Light Mode Switcher */}
+            <div className="ml-1 pl-2 border-l border-slate-200 dark:border-slate-800">
+              <ThemeToggle />
             </div>
           </div>
         </div>
@@ -149,15 +151,15 @@ export default function Home() {
       {/* Main Content Area */}
       <main className="mx-auto max-w-5xl px-4 pt-6 sm:px-6">
         {!isOnboarded ? (
-          /* Empty / Un-onboarded State */
+          /* Empty / Un-onboarded Landing Decision State */
           <div className="mx-auto max-w-lg py-16 text-center">
-            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg mb-6">
-              <Wallet className="h-8 w-8" />
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-slate-900 dark:bg-slate-800 text-white shadow-lg mb-6 ring-1 ring-slate-800 dark:ring-slate-700">
+              <Wallet className="h-8 w-8 text-emerald-400" />
             </div>
-            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-slate-100 sm:text-3xl">
               Will your money survive until your next allowance?
             </h1>
-            <p className="mt-3 text-sm text-slate-600 leading-relaxed">
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
               Designed specifically for college students managing a monthly allowance or stipend. Know your safe daily spend, account for room rent and Wi-Fi, and prevent end-of-month panic.
             </p>
 
@@ -165,7 +167,7 @@ export default function Home() {
               <Button
                 size="lg"
                 onClick={() => setIsOnboardingOpen(true)}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto shadow-sm"
               >
                 Set Up My Budget (1 Min)
               </Button>
@@ -173,7 +175,7 @@ export default function Home() {
                 size="lg"
                 variant="outline"
                 onClick={resetToDemo}
-                className="w-full sm:w-auto"
+                className="w-full sm:w-auto dark:border-slate-700 dark:hover:bg-slate-800"
               >
                 <UserCheck className="h-4 w-4" /> Load Aryan's Demo Profile
               </Button>
@@ -194,34 +196,31 @@ export default function Home() {
               onOpenSimulator={() => setIsSimulatorOpen(true)}
             />
 
-            {/* Quick Actions Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-xs">
-              <span className="text-xs font-semibold text-slate-600 pl-2">
+            {/* Quick Actions Bar - Consolidated Single Add Transaction Button */}
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-3.5 shadow-xs transition-colors">
+              <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 pl-2">
                 Quick Actions
               </span>
               <div className="flex flex-wrap items-center gap-2">
-                <Button size="sm" onClick={openAddExpense}>
-                  <Plus className="h-3.5 w-3.5" /> Log Expense
-                </Button>
-                <Button size="sm" variant="secondary" onClick={openAddIncome}>
-                  <ArrowUpRight className="h-3.5 w-3.5 text-emerald-600" /> Record Income / Top-up
+                <Button size="sm" onClick={() => openAddTransaction('expense')} className="gap-1.5">
+                  <Plus className="h-3.5 w-3.5" /> Add Transaction
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setIsSimulatorOpen(true)}
-                  className="border-slate-300"
+                  className="border-slate-300 dark:border-slate-700 dark:text-slate-300"
                 >
-                  <Calculator className="h-3.5 w-3.5 text-indigo-600" />
+                  <Calculator className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
                   What-If Simulator
                 </Button>
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => setIsChatOpen(true)}
-                  className="border-slate-300"
+                  className="border-slate-300 dark:border-slate-700 dark:text-slate-300"
                 >
-                  <Sparkles className="h-3.5 w-3.5 text-slate-500" />
+                  <Sparkles className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
                   Chat Assistant
                 </Button>
               </div>
@@ -230,7 +229,7 @@ export default function Home() {
             {/* Two-Column Layout: Ledger & Sidebar */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
               <div id="ledger-section" className="lg:col-span-2">
-                <TransactionLedger onOpenAddModal={openAddExpense} />
+                <TransactionLedger />
               </div>
               <div className="lg:col-span-1 space-y-6">
                 <CategoryBreakdownCard />
@@ -250,18 +249,20 @@ export default function Home() {
           onClick={() => setIsChatOpen(true)}
           title="Open Conversational AI Assistant (Ctrl+K)"
           aria-label="Open Conversational AI Assistant"
-          className="hidden sm:flex fixed bottom-5 right-5 z-40 items-center gap-2 rounded-full bg-slate-900 px-4 py-3 text-xs font-semibold text-white shadow-xl hover:bg-slate-800 transition-all hover:scale-105 cursor-pointer border border-slate-700/50"
+          className="hidden sm:flex fixed bottom-5 right-5 z-40 items-center gap-2 rounded-full bg-slate-900 dark:bg-emerald-600 px-4 py-3 text-xs font-semibold text-white shadow-xl hover:bg-slate-800 dark:hover:bg-emerald-500 transition-all hover:scale-105 cursor-pointer border border-slate-700/50 dark:border-emerald-500/50"
         >
-          <Sparkles className="h-4 w-4 text-emerald-400" />
+          <Sparkles className="h-4 w-4 text-emerald-400 dark:text-white" />
           <span>Ask AI / Quick Log</span>
-          <span className="inline-block rounded bg-slate-800 px-1.5 py-0.5 text-[10px] text-slate-400">Ctrl+K</span>
+          <span className="inline-block rounded bg-slate-800 dark:bg-emerald-700 px-1.5 py-0.5 text-[10px] text-slate-400 dark:text-emerald-100">
+            Ctrl+K
+          </span>
         </button>
       )}
 
       {/* Mobile Bottom Navigation Dock (Phones Only) */}
       {isOnboarded && (
         <MobileBottomNav
-          onOpenAddExpense={openAddExpense}
+          onOpenAddExpense={() => openAddTransaction('expense')}
           onOpenChat={() => setIsChatOpen(true)}
           onNavigateToSection={handleNavigateToSection}
         />

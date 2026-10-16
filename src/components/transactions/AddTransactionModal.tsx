@@ -53,17 +53,19 @@ export function AddTransactionModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={type === 'income' ? 'Record Income / Top-up' : type === 'refund' ? 'Record Refund' : 'Record Expense'}
+      title={type === 'income' ? 'Record Income / Top-up / Refund' : 'Record Expense'}
       description="Add an entry directly to your financial ledger."
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Transaction Type Tabs */}
-        <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1 text-xs font-semibold">
+        {/* Transaction Type Tabs: Expense vs Income/Top-up/Refund */}
+        <div className="grid grid-cols-2 gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1 text-xs font-semibold">
           <button
             type="button"
             onClick={() => setType('expense')}
-            className={`rounded-lg py-2 transition-colors ${
-              type === 'expense' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            className={`rounded-lg py-2 transition-colors cursor-pointer ${
+              type === 'expense'
+                ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
             Expense
@@ -71,20 +73,13 @@ export function AddTransactionModal({
           <button
             type="button"
             onClick={() => setType('income')}
-            className={`rounded-lg py-2 transition-colors ${
-              type === 'income' ? 'bg-white text-emerald-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+            className={`rounded-lg py-2 transition-colors cursor-pointer ${
+              type === 'income'
+                ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-xs'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
             }`}
           >
-            Income / Top-up
-          </button>
-          <button
-            type="button"
-            onClick={() => setType('refund')}
-            className={`rounded-lg py-2 transition-colors ${
-              type === 'refund' ? 'bg-white text-blue-800 shadow-xs' : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            Refund
+            Income / Top-up / Refund
           </button>
         </div>
 
@@ -104,7 +99,7 @@ export function AddTransactionModal({
         {/* Description */}
         <Input
           label="Description"
-          placeholder="Auto to campus, Canteen lunch..."
+          placeholder={type === 'expense' ? 'Auto to campus, Canteen lunch...' : 'Monthly allowance top-up, canteen refund...'}
           value={description}
           onChange={e => setDescription(e.target.value)}
           required
@@ -113,13 +108,13 @@ export function AddTransactionModal({
         {/* Category & Date Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Category
             </label>
             <select
               value={categoryId}
               onChange={e => setCategoryId(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-slate-900 focus:outline-hidden"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-slate-900 dark:focus:border-slate-400 focus:outline-hidden"
             >
               {categories.map(c => (
                 <option key={c.id} value={c.id}>
@@ -130,37 +125,37 @@ export function AddTransactionModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Date
             </label>
             <input
               type="date"
               value={date}
               onChange={e => setDate(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2 text-sm text-slate-900 focus:border-slate-900 focus:outline-hidden"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2 text-sm text-slate-900 dark:text-slate-100 focus:border-slate-900 dark:focus:border-slate-400 focus:outline-hidden"
             />
           </div>
         </div>
 
         {/* One-Off Purchase Checkbox (for expenses only) */}
         {type === 'expense' && (
-          <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 bg-slate-50 p-3 cursor-pointer text-xs">
+          <label className="flex items-start gap-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/40 p-3 cursor-pointer text-xs">
             <input
               type="checkbox"
               checked={isOneOff}
               onChange={e => setIsOneOff(e.target.checked)}
-              className="mt-0.5 rounded text-slate-900 focus:ring-slate-900"
+              className="mt-0.5 rounded text-slate-900 dark:text-slate-100 focus:ring-slate-900"
             />
             <div>
-              <span className="font-semibold text-slate-800">One-off / irregular purchase</span>
-              <p className="text-slate-500 mt-0.5">
+              <span className="font-semibold text-slate-800 dark:text-slate-200">One-off / irregular purchase</span>
+              <p className="text-slate-500 dark:text-slate-400 mt-0.5">
                 Check this for infrequent expenses (e.g. semester textbooks, phone repair) so it doesn't falsely inflate your daily living burn rate.
               </p>
             </div>
           </label>
         )}
 
-        <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+        <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
           <Button type="button" variant="ghost" onClick={onClose}>
             Cancel
           </Button>

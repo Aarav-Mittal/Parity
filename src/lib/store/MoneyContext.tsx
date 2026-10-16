@@ -27,6 +27,7 @@ interface MoneyContextType {
   recurringExpenses: RecurringExpense[];
   forecast: ForecastResult | null;
   isOnboarded: boolean;
+  isInitialized: boolean;
   todayISO: string;
   setTodayISO: (dateISO: string) => void;
   completeOnboarding: (data: {
@@ -60,7 +61,7 @@ interface MoneyContextType {
 
 const MoneyContext = createContext<MoneyContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'ai_money_tracker_state_v1';
+const STORAGE_KEY = 'ai_money_tracker_state_v2';
 
 export function MoneyProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -73,7 +74,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
   // Injected today reference date (default to current date YYYY-MM-DD or Oct 15, 2026 for demo consistency)
   const [todayISO, setTodayISO] = useState<string>('2026-10-15');
 
-  // Load from localStorage or initialize with demo data
+  // Load from localStorage or start clean slate so user sees the decision landing page
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -86,20 +87,20 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         setRecurringExpenses(parsed.recurringExpenses || []);
         if (parsed.todayISO) setTodayISO(parsed.todayISO);
       } else {
-        // Initialize with Aryan's realistic sample data by default for instant interactivity
-        setProfile(ARYAN_PROFILE);
-        setCycle(ARYAN_CYCLE);
+        // Clean slate by default - students land on the decision page to load Aryan or set up budget
+        setProfile(null);
+        setCycle(null);
         setCategories(DEFAULT_CATEGORIES);
-        setTransactions(ARYAN_TRANSACTIONS);
-        setRecurringExpenses(ARYAN_RECURRING);
+        setTransactions([]);
+        setRecurringExpenses([]);
       }
     } catch (e) {
-      console.warn('Failed to load local storage state, using demo defaults', e);
-      setProfile(ARYAN_PROFILE);
-      setCycle(ARYAN_CYCLE);
+      console.warn('Failed to load local storage state', e);
+      setProfile(null);
+      setCycle(null);
       setCategories(DEFAULT_CATEGORIES);
-      setTransactions(ARYAN_TRANSACTIONS);
-      setRecurringExpenses(ARYAN_RECURRING);
+      setTransactions([]);
+      setRecurringExpenses([]);
     }
     setIsInitialized(true);
   }, []);
@@ -323,6 +324,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         recurringExpenses,
         forecast,
         isOnboarded,
+        isInitialized,
         todayISO,
         setTodayISO,
         completeOnboarding,

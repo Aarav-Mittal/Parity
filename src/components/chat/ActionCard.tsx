@@ -23,28 +23,28 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     const catName = getCategoryName(categoryId);
 
     return (
-      <div className="mt-2.5 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm text-xs">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+      <div className="mt-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 p-3.5 shadow-sm text-xs">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <span className={`p-1.5 rounded-lg ${
               isRefund
-                ? 'bg-blue-50 text-blue-700'
+                ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
                 : type === 'income'
-                ? 'bg-emerald-50 text-emerald-700'
-                : 'bg-rose-50 text-rose-700'
+                ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
+                : 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
             }`}>
               {type === 'income' ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
             </span>
             <div>
-              <span className="font-semibold text-slate-900 text-sm">
+              <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                 {type === 'income' ? (isRefund ? 'Refund / Cashback' : 'Income') : 'Expense'}
               </span>
-              <span className="text-slate-400 text-[11px] block">{catName}</span>
+              <span className="text-slate-400 dark:text-slate-500 text-[11px] block">{catName}</span>
             </div>
           </div>
           <div className="text-right">
             <span className={`text-base font-bold ${
-              type === 'income' ? 'text-emerald-600' : 'text-slate-900'
+              type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-slate-100'
             }`}>
               {type === 'income' ? '+' : '-'}{formatRupees(amountPaise)}
             </span>
@@ -52,19 +52,19 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
         </div>
 
         <div className="py-2.5 space-y-1">
-          <div className="flex justify-between text-slate-600">
-            <span className="text-slate-400">Description:</span>
-            <span className="font-medium text-slate-800">{description}</span>
+          <div className="flex justify-between text-slate-600 dark:text-slate-400">
+            <span className="text-slate-400 dark:text-slate-500">Description:</span>
+            <span className="font-medium text-slate-800 dark:text-slate-200">{description}</span>
           </div>
           {isOneOff && (
-            <div className="inline-flex items-center gap-1 rounded-md bg-purple-50 text-purple-700 px-2 py-0.5 text-[10px] font-medium mt-1">
+            <div className="inline-flex items-center gap-1 rounded-md bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 px-2 py-0.5 text-[10px] font-medium mt-1 border border-purple-200 dark:border-purple-800">
               <span>One-off capital purchase (won't inflate daily velocity)</span>
             </div>
           )}
         </div>
 
         {proposal.status === 'pending' ? (
-          <div className="flex gap-2 pt-2 border-t border-slate-100">
+          <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <Button
               type="button"
               variant="primary"
@@ -79,21 +79,21 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
               type="button"
               variant="ghost"
               size="sm"
-              className="text-xs text-slate-500 hover:text-slate-700"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               onClick={() => onCancel(proposal)}
             >
               Cancel
             </Button>
           </div>
         ) : proposal.status === 'confirmed' ? (
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-emerald-700 font-medium">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-emerald-700 dark:text-emerald-400 font-medium">
             <span className="flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5" /> Logged to ledger
             </span>
-            <span className="text-[10px] text-slate-400">Updated</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">Updated</span>
           </div>
         ) : (
-          <div className="pt-2 border-t border-slate-100 flex items-center gap-1 text-slate-400 font-medium">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium">
             <X className="h-3.5 w-3.5" /> Cancelled
           </div>
         )}
@@ -105,40 +105,40 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     const { transactions, totalAmountPaise } = proposal.payload;
 
     return (
-      <div className="mt-2.5 rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm text-xs">
-        <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+      <div className="mt-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-850 p-3.5 shadow-sm text-xs">
+        <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <span className="p-1.5 rounded-lg bg-rose-50 text-rose-700">
+            <span className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">
               <ArrowUpRight className="h-4 w-4" />
             </span>
             <div>
-              <span className="font-semibold text-slate-900 text-sm">
+              <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
                 Batch Expenses ({transactions.length} items)
               </span>
-              <span className="text-slate-400 text-[11px] block">Multiple entries detected</span>
+              <span className="text-slate-400 dark:text-slate-500 text-[11px] block">Multiple entries detected</span>
             </div>
           </div>
           <div className="text-right">
-            <span className="text-base font-bold text-slate-900">
+            <span className="text-base font-bold text-slate-900 dark:text-slate-100">
               -{formatRupees(totalAmountPaise)}
             </span>
           </div>
         </div>
 
-        <div className="py-2 divide-y divide-slate-100">
+        <div className="py-2 divide-y divide-slate-100 dark:divide-slate-800">
           {transactions.map((tx, idx) => (
             <div key={idx} className="flex items-center justify-between py-1.5">
               <div>
-                <span className="font-medium text-slate-800">{tx.description}</span>
-                <span className="text-[10px] text-slate-400 block">{getCategoryName(tx.categoryId)}</span>
+                <span className="font-medium text-slate-800 dark:text-slate-200">{tx.description}</span>
+                <span className="text-[10px] text-slate-400 dark:text-slate-500 block">{getCategoryName(tx.categoryId)}</span>
               </div>
-              <span className="font-semibold text-slate-700">-{formatRupees(tx.amountPaise)}</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300">-{formatRupees(tx.amountPaise)}</span>
             </div>
           ))}
         </div>
 
         {proposal.status === 'pending' ? (
-          <div className="flex gap-2 pt-2 border-t border-slate-100">
+          <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
             <Button
               type="button"
               variant="primary"
@@ -153,21 +153,21 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
               type="button"
               variant="ghost"
               size="sm"
-              className="text-xs text-slate-500 hover:text-slate-700"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               onClick={() => onCancel(proposal)}
             >
               Cancel
             </Button>
           </div>
         ) : proposal.status === 'confirmed' ? (
-          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-emerald-700 font-medium">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-emerald-700 dark:text-emerald-400 font-medium">
             <span className="flex items-center gap-1.5">
               <Check className="h-3.5 w-3.5" /> {transactions.length} items logged to ledger
             </span>
-            <span className="text-[10px] text-slate-400">Updated</span>
+            <span className="text-[10px] text-slate-400 dark:text-slate-500">Updated</span>
           </div>
         ) : (
-          <div className="pt-2 border-t border-slate-100 flex items-center gap-1 text-slate-400 font-medium">
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium">
             <X className="h-3.5 w-3.5" /> Cancelled
           </div>
         )}
@@ -179,42 +179,42 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     const { originalAmountPaise, newAmountPaise, originalDescription, newDescription } = proposal.payload;
 
     return (
-      <div className="mt-2.5 rounded-2xl border border-amber-200 bg-amber-50/50 p-3.5 shadow-sm text-xs">
-        <div className="flex items-center gap-2 pb-2 border-b border-amber-100 font-semibold text-amber-900">
-          <RotateCcw className="h-4 w-4 text-amber-600" />
+      <div className="mt-2.5 rounded-2xl border border-amber-200 dark:border-amber-800/80 bg-amber-50/50 dark:bg-amber-950/40 p-3.5 shadow-sm text-xs">
+        <div className="flex items-center gap-2 pb-2 border-b border-amber-100 dark:border-amber-800/60 font-semibold text-amber-900 dark:text-amber-200">
+          <RotateCcw className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <span>Correction Proposal</span>
         </div>
 
-        <div className="py-2.5 space-y-1.5 text-slate-700">
+        <div className="py-2.5 space-y-1.5 text-slate-700 dark:text-slate-300">
           <div className="flex items-center justify-between">
-            <span className="text-slate-500">Transaction:</span>
-            <span className="font-medium text-slate-800">{originalDescription}</span>
+            <span className="text-slate-500 dark:text-slate-400">Transaction:</span>
+            <span className="font-medium text-slate-800 dark:text-slate-200">{originalDescription}</span>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-slate-500">Amount Change:</span>
+            <span className="text-slate-500 dark:text-slate-400">Amount Change:</span>
             <div className="flex items-center gap-1.5 font-bold">
-              <span className="line-through text-slate-400">{formatRupees(originalAmountPaise)}</span>
-              <ArrowRight className="h-3 w-3 text-slate-400" />
-              <span className="text-emerald-600">{newAmountPaise ? formatRupees(newAmountPaise) : 'N/A'}</span>
+              <span className="line-through text-slate-400 dark:text-slate-500">{formatRupees(originalAmountPaise)}</span>
+              <ArrowRight className="h-3 w-3 text-slate-400 dark:text-slate-500" />
+              <span className="text-emerald-600 dark:text-emerald-400">{newAmountPaise ? formatRupees(newAmountPaise) : 'N/A'}</span>
             </div>
           </div>
 
           {newDescription && (
             <div className="flex items-center justify-between">
-              <span className="text-slate-500">New Title:</span>
-              <span className="font-medium text-slate-800">{newDescription}</span>
+              <span className="text-slate-500 dark:text-slate-400">New Title:</span>
+              <span className="font-medium text-slate-800 dark:text-slate-200">{newDescription}</span>
             </div>
           )}
         </div>
 
         {proposal.status === 'pending' ? (
-          <div className="flex gap-2 pt-2 border-t border-amber-100">
+          <div className="flex gap-2 pt-2 border-t border-amber-100 dark:border-amber-800/60">
             <Button
               type="button"
               variant="primary"
               size="sm"
-              className="flex-1 py-1.5 text-xs font-semibold gap-1.5 bg-amber-600 hover:bg-amber-700"
+              className="flex-1 py-1.5 text-xs font-semibold gap-1.5 bg-amber-600 hover:bg-amber-700 dark:bg-amber-500 dark:hover:bg-amber-600 text-white"
               onClick={() => onConfirm(proposal)}
             >
               <Check className="h-3.5 w-3.5" />
@@ -224,18 +224,18 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
               type="button"
               variant="ghost"
               size="sm"
-              className="text-xs text-slate-500 hover:text-slate-700"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               onClick={() => onCancel(proposal)}
             >
               Dismiss
             </Button>
           </div>
         ) : proposal.status === 'confirmed' ? (
-          <div className="pt-2 border-t border-amber-100 flex items-center gap-1.5 text-emerald-700 font-medium">
+          <div className="pt-2 border-t border-amber-100 dark:border-amber-800/60 flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 font-medium">
             <Check className="h-3.5 w-3.5" /> Correction applied
           </div>
         ) : (
-          <div className="pt-2 border-t border-amber-100 flex items-center gap-1 text-slate-400 font-medium">
+          <div className="pt-2 border-t border-amber-100 dark:border-amber-800/60 flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium">
             <X className="h-3.5 w-3.5" /> Dismissed
           </div>
         )}
@@ -247,20 +247,20 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
     const { description, amountPaise } = proposal.payload;
 
     return (
-      <div className="mt-2.5 rounded-2xl border border-rose-200 bg-rose-50/50 p-3.5 shadow-sm text-xs">
-        <div className="flex items-center gap-2 pb-2 border-b border-rose-100 font-semibold text-rose-900">
-          <AlertCircle className="h-4 w-4 text-rose-600" />
+      <div className="mt-2.5 rounded-2xl border border-rose-200 dark:border-rose-800/80 bg-rose-50/50 dark:bg-rose-950/40 p-3.5 shadow-sm text-xs">
+        <div className="flex items-center gap-2 pb-2 border-b border-rose-100 dark:border-rose-800/60 font-semibold text-rose-900 dark:text-rose-200">
+          <AlertCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" />
           <span>Confirm Undo / Deletion</span>
         </div>
 
-        <div className="py-2.5 space-y-1 text-slate-700">
-          <p className="text-slate-600">
-            Are you sure you want to remove <span className="font-semibold text-slate-900">"{description}"</span> ({formatRupees(amountPaise)}) from your ledger?
+        <div className="py-2.5 space-y-1 text-slate-700 dark:text-slate-300">
+          <p className="text-slate-600 dark:text-slate-400">
+            Are you sure you want to remove <span className="font-semibold text-slate-900 dark:text-slate-100">"{description}"</span> ({formatRupees(amountPaise)}) from your ledger?
           </p>
         </div>
 
         {proposal.status === 'pending' ? (
-          <div className="flex gap-2 pt-2 border-t border-rose-100">
+          <div className="flex gap-2 pt-2 border-t border-rose-100 dark:border-rose-800/60">
             <Button
               type="button"
               variant="danger"
@@ -275,18 +275,18 @@ export function ActionCard({ proposal, categories, onConfirm, onCancel }: Action
               type="button"
               variant="ghost"
               size="sm"
-              className="text-xs text-slate-500 hover:text-slate-700"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               onClick={() => onCancel(proposal)}
             >
               Keep
             </Button>
           </div>
         ) : proposal.status === 'confirmed' ? (
-          <div className="pt-2 border-t border-rose-100 flex items-center gap-1.5 text-rose-700 font-medium">
+          <div className="pt-2 border-t border-rose-100 dark:border-rose-800/60 flex items-center gap-1.5 text-rose-700 dark:text-rose-300 font-medium">
             <Check className="h-3.5 w-3.5" /> Transaction deleted
           </div>
         ) : (
-          <div className="pt-2 border-t border-rose-100 flex items-center gap-1 text-slate-400 font-medium">
+          <div className="pt-2 border-t border-rose-100 dark:border-rose-800/60 flex items-center gap-1 text-slate-400 dark:text-slate-500 font-medium">
             <X className="h-3.5 w-3.5" /> Kept
           </div>
         )}

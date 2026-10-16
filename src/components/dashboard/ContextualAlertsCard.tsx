@@ -68,14 +68,14 @@ export function ContextualAlertsCard({
   const getCardStyle = (severity: ContextualAlert['severity']) => {
     switch (severity) {
       case 'danger':
-        return 'border-rose-200 bg-rose-50/70 text-rose-950';
+        return 'border-rose-200 dark:border-rose-800/80 bg-rose-50/70 dark:bg-rose-950/40 text-rose-950 dark:text-rose-200';
       case 'warning':
-        return 'border-amber-200 bg-amber-50/70 text-amber-950';
+        return 'border-amber-200 dark:border-amber-800/80 bg-amber-50/70 dark:bg-amber-950/40 text-amber-950 dark:text-amber-200';
       case 'success':
-        return 'border-emerald-200 bg-emerald-50/70 text-emerald-950';
+        return 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-200';
       case 'info':
       default:
-        return 'border-blue-200 bg-blue-50/70 text-blue-950';
+        return 'border-blue-200 dark:border-blue-800/80 bg-blue-50/70 dark:bg-blue-950/40 text-blue-950 dark:text-blue-200';
     }
   };
 
@@ -132,7 +132,7 @@ export function ContextualAlertsCard({
             onClick={() => handleDismiss(alert.id)}
             title="Dismiss alert"
             aria-label="Dismiss alert"
-            className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-black/5 transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="p-1 text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <X className="h-4 w-4" />
           </button>

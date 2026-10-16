@@ -52,7 +52,7 @@ export function UpcomingBillsCard() {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-slate-500" />
+            <Calendar className="h-4 w-4 text-slate-500 dark:text-slate-400" />
             <CardTitle>Upcoming Fixed Obligations</CardTitle>
           </div>
           <Button size="sm" variant="outline" onClick={() => setIsAddModalOpen(true)}>
@@ -61,11 +61,11 @@ export function UpcomingBillsCard() {
         </CardHeader>
 
         {recurringExpenses.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-xs text-slate-500">
+          <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-xs text-slate-500 dark:text-slate-400">
             No recurring bills added yet. Add predictable expenses like room rent, Wi-Fi, or phone recharge to protect your budget.
           </div>
         ) : (
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {recurringExpenses.map(rec => {
               const isPaid = isRecurringExpensePaidInCycle(rec, cycleStart);
               const cat = categories.find(c => c.id === rec.categoryId);
@@ -84,26 +84,26 @@ export function UpcomingBillsCard() {
                     />
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-900">{rec.name}</span>
+                        <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{rec.name}</span>
                         {isPaid && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                             <CheckCircle2 className="h-3 w-3" /> Paid this cycle
                           </span>
                         )}
                         {rec.isPaused && (
-                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500 font-medium">
+                          <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                             Paused
                           </span>
                         )}
                       </div>
-                      <span className="text-xs text-slate-500">
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
                         Due day {rec.dueDayOfMonth} of month
                       </span>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-slate-900">
+                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
                       {formatPaiseToINR(rec.amountPaise)}
                     </span>
 
@@ -121,14 +121,14 @@ export function UpcomingBillsCard() {
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => togglePauseRecurringExpense(rec.id)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                         title={rec.isPaused ? 'Resume bill' : 'Pause bill'}
                       >
                         {rec.isPaused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
                       </button>
                       <button
                         onClick={() => deleteRecurringExpense(rec.id)}
-                        className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 hover:text-rose-600 transition-colors"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
                         title="Delete bill"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -176,13 +176,13 @@ export function UpcomingBillsCard() {
             required
           />
           <div>
-            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
               Category
             </label>
             <select
               value={billCategory}
               onChange={e => setBillCategory(e.target.value)}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 focus:border-slate-900 focus:outline-hidden"
+              className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3.5 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-slate-900 dark:focus:border-slate-400 focus:outline-hidden"
             >
               {categories.map(c => (
                 <option key={c.id} value={c.id}>
@@ -191,7 +191,7 @@ export function UpcomingBillsCard() {
               ))}
             </select>
           </div>
-          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+          <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
             <Button type="button" variant="ghost" onClick={() => setIsAddModalOpen(false)}>
               Cancel
             </Button>

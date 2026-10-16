@@ -45,24 +45,24 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-slate-900/40 dark:bg-slate-950/75 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Dialog Content */}
       <div
-        className={`relative w-full ${widthClasses} rounded-2xl border border-slate-200 bg-white p-6 shadow-xl transition-all sm:my-8`}
+        className={`relative w-full ${widthClasses} rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl transition-all sm:my-8 text-slate-900 dark:text-slate-100`}
         role="dialog"
         aria-modal="true"
       >
         <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="text-lg font-semibold tracking-tight text-slate-900">{title}</h2>
-            {description && <p className="mt-1 text-xs text-slate-500">{description}</p>}
+            <h2 className="text-lg font-semibold tracking-tight text-slate-900 dark:text-slate-100">{title}</h2>
+            {description && <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{description}</p>}
           </div>
           <button
             onClick={onClose}
-            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
+            className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
             aria-label="Close modal"
           >
             <X className="h-5 w-5" />
