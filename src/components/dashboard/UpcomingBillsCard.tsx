@@ -83,15 +83,15 @@ export function UpcomingBillsCard() {
                       colorHex={cat?.colorHex}
                     />
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">{rec.name}</span>
                         {isPaid && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <span className="shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 text-[10px] sm:text-[11px] font-medium text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 leading-none">
                             <CheckCircle2 className="h-3 w-3" /> Paid this cycle
                           </span>
                         )}
                         {rec.isPaused && (
-                          <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                          <span className="shrink-0 whitespace-nowrap rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 font-medium leading-none">
                             Paused
                           </span>
                         )}
@@ -102,8 +102,8 @@ export function UpcomingBillsCard() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  <div className="flex items-center gap-2 sm:gap-3 shrink-0 ml-auto">
+                    <span className="shrink-0 whitespace-nowrap text-sm font-bold text-slate-900 dark:text-slate-100">
                       {formatPaiseToINR(rec.amountPaise)}
                     </span>
 

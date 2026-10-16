@@ -95,7 +95,7 @@ export default function Home() {
               <span className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-slate-100 block leading-tight">
                 Parity
               </span>
-              <span className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <span className="hidden sm:block text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium">
                 Student Budgeting & Run-Out Forecast
               </span>
             </div>

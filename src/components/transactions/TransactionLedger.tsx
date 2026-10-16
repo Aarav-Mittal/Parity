@@ -144,57 +144,63 @@ export function TransactionLedger({ onOpenAddModal }: { onOpenAddModal?: () => v
                       return (
                         <div
                           key={tx.id}
-                          className="flex items-center justify-between p-3 transition-colors hover:bg-slate-100/60 dark:hover:bg-slate-800/60"
+                          className="flex items-center justify-between p-2.5 sm:p-3 transition-colors hover:bg-slate-100/60 dark:hover:bg-slate-800/60 gap-2"
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
                             <CategoryIcon
                               iconName={cat?.icon}
                               colorHex={cat?.colorHex}
+                              className="h-4 w-4 shrink-0"
                             />
-                            <div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-1.5">
+                                <span className="text-xs sm:text-sm font-semibold text-slate-900 dark:text-slate-100 truncate max-w-[140px] sm:max-w-xs md:max-w-sm">
                                   {tx.description}
                                 </span>
                                 {isExpense && !tx.recurringExpenseId && (
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleOneOff(tx)}
-                                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium transition-colors cursor-pointer ${
-                                      tx.isOneOff
-                                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800 hover:bg-purple-200 dark:hover:bg-purple-900/60'
-                                        : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 dark:hover:text-purple-300 hover:border-purple-200 dark:hover:border-purple-800'
-                                    }`}
-                                    title={
-                                      tx.isOneOff
-                                        ? 'Marked as one-off purchase. Click to change to regular daily expense.'
-                                        : 'Click to mark as one-off purchase'
-                                    }
-                                  >
-                                    {tx.isOneOff ? 'One-off ✓' : '+ One-off'}
-                                  </button>
+                                  <>
+                                    {tx.isOneOff ? (
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleOneOff(tx)}
+                                        className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-purple-100 dark:bg-purple-950/60 text-purple-800 dark:text-purple-300 border border-purple-300 dark:border-purple-800 px-2 py-0.5 text-[10px] font-medium leading-none hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors cursor-pointer"
+                                        title="One-off capital purchase. Click to change to regular daily expense."
+                                      >
+                                        One-off ✓
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={() => toggleOneOff(tx)}
+                                        className="hidden sm:inline-flex shrink-0 whitespace-nowrap rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium leading-none hover:bg-purple-50 dark:hover:bg-purple-950/40 hover:text-purple-700 dark:hover:text-purple-300 hover:border-purple-200 dark:hover:border-purple-800 transition-colors cursor-pointer"
+                                        title="Click to mark as one-off purchase"
+                                      >
+                                        + One-off
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                                 {tx.recurringExpenseId && (
-                                  <span className="rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.2 text-[10px] font-medium">
+                                  <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 px-2 py-0.5 text-[10px] font-medium leading-none">
                                     Bill
                                   </span>
                                 )}
                                 {tx.isCorrection && (
-                                  <span className="rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.2 text-[10px] font-medium">
+                                  <span className="shrink-0 whitespace-nowrap inline-flex items-center rounded-full bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 px-2 py-0.5 text-[10px] font-medium leading-none">
                                     Edited
                                   </span>
                                 )}
                               </div>
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                              <p className="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
                                 {cat?.name || 'Uncategorized'}
-                                {tx.rawInput ? ` • "${tx.rawInput}"` : ''}
-                              </span>
+                                {tx.rawInput ? <span className="opacity-75"> • "{tx.rawInput}"</span> : null}
+                              </p>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0 ml-1">
                             <span
-                              className={`text-sm font-bold ${
+                              className={`whitespace-nowrap text-xs sm:text-sm font-bold ${
                                 isExpense
                                   ? 'text-slate-900 dark:text-slate-100'
                                   : isIncome
@@ -206,18 +212,20 @@ export function TransactionLedger({ onOpenAddModal }: { onOpenAddModal?: () => v
                               {formatPaiseToINR(tx.amountPaise)}
                             </span>
 
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-0.5 sm:gap-1">
                               <button
                                 onClick={() => startEdit(tx)}
-                                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
+                                className="rounded-lg p-1 sm:p-1.5 text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
                                 title="Edit transaction"
+                                aria-label="Edit transaction"
                               >
                                 <Edit2 className="h-3.5 w-3.5" />
                               </button>
                               <button
                                 onClick={() => deleteTransaction(tx.id)}
-                                className="rounded-lg p-1.5 text-slate-400 hover:bg-rose-100 dark:hover:bg-rose-950/50 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                                className="rounded-lg p-1 sm:p-1.5 text-slate-400 hover:bg-rose-100 dark:hover:bg-rose-950/50 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
                                 title="Delete transaction"
+                                aria-label="Delete transaction"
                               >
                                 <Trash2 className="h-3.5 w-3.5" />
                               </button>
