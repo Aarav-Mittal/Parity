@@ -29,7 +29,7 @@ export function OnboardingModal({ isOpen, onClose }: { isOpen: boolean; onClose:
 
   const [newRecName, setNewRecName] = useState('');
   const [newRecAmount, setNewRecAmount] = useState('');
-  const [newRecDay, setNewRecDay] = useState('15');
+  const [newRecDay, setNewRecDay] = useState('');
 
   const addRecurringItem = () => {
     if (!newRecName || !newRecAmount) return;
@@ -43,7 +43,7 @@ export function OnboardingModal({ isOpen, onClose }: { isOpen: boolean; onClose:
     ]);
     setNewRecName('');
     setNewRecAmount('');
-    setNewRecDay('15');
+    setNewRecDay('');
   };
 
   const removeRecurringItem = (index: number) => {
