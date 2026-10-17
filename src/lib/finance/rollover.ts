@@ -86,6 +86,7 @@ export function executeCycleRollover(params: {
     isOneOff: true,
     isCorrection: false,
     correctedFromId: null,
+    rawInput: 'cycle-rollover',
   };
 
   return {

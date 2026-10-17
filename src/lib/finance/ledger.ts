@@ -40,16 +40,21 @@ export function getEffectiveTransactions(transactions: Transaction[]): Transacti
 /**
  * Calculates current balance from an opening balance and a list of transactions.
  * Automatically resolves corrections and respects transaction types.
+ * If asOfDateISO is provided, only transactions on or before that date are counted.
  */
 export function calculateLedgerBalance(
   openingBalancePaise: number,
-  transactions: Transaction[]
+  transactions: Transaction[],
+  asOfDateISO?: string
 ): number {
   const effectiveTransactions = getEffectiveTransactions(transactions);
 
   let balance = openingBalancePaise;
 
   for (const tx of effectiveTransactions) {
+    if (asOfDateISO && tx.transactionDate > asOfDateISO) {
+      continue;
+    }
     switch (tx.type) {
       case 'income':
       case 'refund':

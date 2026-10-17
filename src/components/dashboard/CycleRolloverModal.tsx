@@ -70,8 +70,9 @@ export function CycleRolloverModal() {
           </div>
           <Button
             size="sm"
+            variant="emerald"
             onClick={() => setIsOpen(true)}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white shrink-0"
+            className="shrink-0 font-semibold"
           >
             Start New Cycle
           </Button>
@@ -98,8 +99,8 @@ export function CycleRolloverModal() {
           </p>
 
           {/* Cashflow Carryover Summary Box */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/70 p-4 space-y-3">
+            <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 font-medium">
               <span>Carried over from last month:</span>
               <span className={`font-mono font-semibold ${currentCarryoverPaise >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
                 {formatPaiseToINR(currentCarryoverPaise)}
@@ -107,7 +108,7 @@ export function CycleRolloverModal() {
             </div>
 
             <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
                 Allowance Received for {rolloverStatus.cycleMonthLabel} (₹)
               </label>
               <Input
@@ -118,21 +119,21 @@ export function CycleRolloverModal() {
                 value={allowanceInput}
                 onChange={e => setAllowanceInput(e.target.value)}
                 placeholder="e.g. 8000"
-                className="font-mono text-base font-bold"
+                className="font-mono text-base font-bold bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700 text-slate-900 dark:text-slate-100"
               />
             </div>
 
             <div className="flex items-center justify-between text-xs pt-2 border-t border-slate-200 dark:border-slate-800 font-semibold text-slate-900 dark:text-slate-100">
               <span>New Starting Balance:</span>
-              <span className="font-mono text-emerald-600 dark:text-emerald-400 text-sm">
+              <span className="font-mono text-emerald-600 dark:text-emerald-400 text-base font-bold">
                 {formatPaiseToINR(totalNewPoolPaise)}
               </span>
             </div>
           </div>
 
           {/* Safety Guarantees Callout */}
-          <div className="rounded-xl bg-slate-100 dark:bg-slate-800/60 p-3 text-xs text-slate-600 dark:text-slate-400 space-y-1.5">
-            <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-medium">
+          <div className="rounded-xl bg-slate-100/90 dark:bg-slate-850 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 p-3.5 text-xs text-slate-600 dark:text-slate-300 space-y-1.5">
+            <div className="flex items-center gap-1.5 text-slate-800 dark:text-slate-200 font-semibold">
               <ShieldCheck className="h-4 w-4 text-emerald-500" />
               <span>What happens next:</span>
             </div>
@@ -149,16 +150,17 @@ export function CycleRolloverModal() {
               type="button"
               variant="ghost"
               onClick={handleDismiss}
-              className="text-xs text-slate-500"
+              className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             >
               Remind Me Tomorrow
             </Button>
             <Button
               type="submit"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white gap-1.5 font-semibold"
+              variant="emerald"
+              className="gap-1.5 font-semibold text-white"
             >
               <span>Deposit & Start {rolloverStatus.cycleMonthLabel}</span>
-              <ArrowRight className="h-4 w-4" />
+              <ArrowRight className="h-4 w-4 text-white" />
             </Button>
           </div>
         </form>

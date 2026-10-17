@@ -129,4 +129,39 @@ describe('Allowance Month Rollover Engine', () => {
     // In November (new cycle start 2026-11-01), the bill is recognized as UNPAID!
     expect(isRecurringExpensePaidInCycle(wifiBill, '2026-11-01')).toBe(false);
   });
+
+  it('correctly isolates balance as of a given date, ignoring future-dated simulated transactions', () => {
+    const openingBalance = 800000; // ₹8,000
+    const ledgerWithFutureTx: Transaction[] = [
+      {
+        id: 'tx-oct',
+        userId: 'usr-1',
+        amountPaise: 12000, // ₹120 on Oct 17
+        type: 'expense',
+        description: 'Chai and snacks',
+        transactionDate: '2026-10-17',
+        isOneOff: false,
+        createdAt: '2026-10-17T10:00:00Z',
+      },
+      {
+        id: 'tx-simulated-nov',
+        userId: 'usr-1',
+        amountPaise: 800000, // ₹8,000 allowance on Nov 1
+        type: 'income',
+        description: 'November 2026 Allowance',
+        transactionDate: '2026-11-01',
+        rawInput: 'cycle-rollover',
+        isOneOff: true,
+        createdAt: '2026-11-01T00:00:00Z',
+      },
+    ];
+
+    // As of October 17: the November 1st allowance has not happened yet!
+    const octBalance = calculateLedgerBalance(openingBalance, ledgerWithFutureTx, '2026-10-17');
+    expect(octBalance).toBe(788000); // Exactly ₹7,880!
+
+    // As of November 1: the allowance is included
+    const novBalance = calculateLedgerBalance(openingBalance, ledgerWithFutureTx, '2026-11-01');
+    expect(novBalance).toBe(1588000); // ₹15,880
+  });
 });

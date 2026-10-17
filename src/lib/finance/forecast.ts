@@ -293,8 +293,8 @@ export function calculateSpendingVelocity(
 export function calculateForecast(input: ForecastInput): ForecastResult {
   const { todayISO, cycle, transactions, recurringExpenses } = input;
 
-  // 1. Calculate current real ledger balance
-  const currentBalancePaise = calculateLedgerBalance(cycle.openingBalancePaise, transactions);
+  // 1. Calculate current real ledger balance (as of todayISO)
+  const currentBalancePaise = calculateLedgerBalance(cycle.openingBalancePaise, transactions, todayISO);
 
   // 2. Compute cycle timelines
   const daysRemaining = Math.max(0, getDaysDifference(todayISO, cycle.nextPayoutDate));

@@ -202,7 +202,43 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
   }, [todayISO]);
 
   const resetDateToToday = useCallback(() => {
-    setTodayISO(formatISODate(new Date()));
+    const targetDate = isDemoMode ? '2026-10-15' : formatISODate(new Date());
+    setTodayISO(targetDate);
+    setDismissedRolloverDate(null);
+
+    // 1. Purge any simulated future rollover transactions
+    setTransactions(prev =>
+      prev.filter(tx => !(tx.rawInput === 'cycle-rollover' && tx.transactionDate > targetDate))
+    );
+
+    // 2. Synchronize cycle back to targetDate active cycle dates
+    setCycle(prev => {
+      if (!prev) return null;
+      const { currentCycleStart, nextPayoutDate } = computeCycleDates(targetDate, prev.cycleDayOfMonth);
+      return {
+        ...prev,
+        currentCycleStart,
+        nextPayoutDate,
+      };
+    });
+  }, [isDemoMode]);
+
+  const handleSetTodayISO = useCallback((dateISO: string) => {
+    setTodayISO(dateISO);
+
+    // If navigating to before the active cycle start, automatically align cycle dates to that period
+    setCycle(prev => {
+      if (!prev) return null;
+      if (dateISO < prev.currentCycleStart) {
+        const { currentCycleStart, nextPayoutDate } = computeCycleDates(dateISO, prev.cycleDayOfMonth);
+        return {
+          ...prev,
+          currentCycleStart,
+          nextPayoutDate,
+        };
+      }
+      return prev;
+    });
   }, []);
 
   const rolloverCycle = useCallback(
@@ -493,7 +529,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         isDemoMode,
         hasUserBudget,
         todayISO,
-        setTodayISO,
+        setTodayISO: handleSetTodayISO,
         resetDateToToday,
         rolloverStatus,
         rolloverCycle,
