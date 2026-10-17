@@ -6,6 +6,7 @@ import { DashboardHero } from '@/components/dashboard/DashboardHero';
 import { UpcomingBillsCard } from '@/components/dashboard/UpcomingBillsCard';
 import { ContextualAlertsCard } from '@/components/dashboard/ContextualAlertsCard';
 import { CategoryBreakdownCard } from '@/components/dashboard/CategoryBreakdownCard';
+import { CycleRolloverModal } from '@/components/dashboard/CycleRolloverModal';
 import { WhatIfSimulatorModal } from '@/components/dashboard/WhatIfSimulatorModal';
 import { TransactionLedger } from '@/components/transactions/TransactionLedger';
 import { AddTransactionModal } from '@/components/transactions/AddTransactionModal';
@@ -34,6 +35,7 @@ export default function Home() {
     hasUserBudget,
     todayISO,
     setTodayISO,
+    resetDateToToday,
     switchToDemo,
     switchToUserBudget,
     resetToCleanSlate,
@@ -116,6 +118,14 @@ export default function Home() {
                 onChange={e => setTodayISO(e.target.value)}
                 className="bg-transparent font-mono text-xs text-slate-900 dark:text-slate-100 font-semibold focus:outline-hidden"
               />
+              <button
+                type="button"
+                onClick={resetDateToToday}
+                title="Reset to today's real date"
+                className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer pl-1 border-l border-slate-300 dark:border-slate-700"
+              >
+                Today
+              </button>
             </div>
 
             <div className="flex items-center gap-1">
@@ -234,6 +244,9 @@ export default function Home() {
                 )}
               </div>
             )}
+
+            {/* Monthly Allowance Rollover Alert & Modal */}
+            <CycleRolloverModal />
 
             {/* Survival Dashboard Hero */}
             <div id="dashboard-top">

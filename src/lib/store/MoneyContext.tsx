@@ -18,6 +18,7 @@ import {
 } from './sampleData';
 import { calculateForecast } from '@/lib/finance/forecast';
 import { computeCycleDates, formatISODate } from '@/lib/finance/dates';
+import { checkRolloverStatus, executeCycleRollover, RolloverPreview } from '@/lib/finance/rollover';
 
 interface MoneyContextType {
   profile: UserProfile | null;
@@ -32,6 +33,10 @@ interface MoneyContextType {
   hasUserBudget: boolean;
   todayISO: string;
   setTodayISO: (dateISO: string) => void;
+  resetDateToToday: () => void;
+  rolloverStatus: RolloverPreview | null;
+  rolloverCycle: (newAllowancePaise?: number) => void;
+  dismissRolloverForToday: () => void;
   completeOnboarding: (data: {
     allowanceAmountPaise: number;
     cycleDayOfMonth: number;
@@ -79,12 +84,14 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>([]);
   
-  // Injected today reference date (default to current date YYYY-MM-DD or Oct 15, 2026 for demo consistency)
+  // Injected today reference date (defaults to sample date during SSR, initialized to real device date in client useEffect)
   const [todayISO, setTodayISO] = useState<string>('2026-10-15');
+  const [dismissedRolloverDate, setDismissedRolloverDate] = useState<string | null>(null);
 
   // Load from localStorage or start clean slate
   useEffect(() => {
     try {
+      const realToday = formatISODate(new Date());
       const savedUser = localStorage.getItem(STORAGE_USER_KEY);
       const savedActive = localStorage.getItem(STORAGE_ACTIVE_KEY);
 
@@ -99,10 +106,17 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         setCategories(parsed.categories || DEFAULT_CATEGORIES);
         setTransactions(parsed.transactions || []);
         setRecurringExpenses(parsed.recurringExpenses || []);
-        if (parsed.todayISO) setTodayISO(parsed.todayISO);
 
         const isDemo = Boolean(parsed.isDemoMode || parsed.profile?.id === 'usr-aryan');
         setIsDemoMode(isDemo);
+
+        if (isDemo) {
+          // Demo persona uses sample date timeline
+          setTodayISO(parsed.todayISO || '2026-10-15');
+        } else {
+          // Real user budgets automatically track against the student's real device date
+          setTodayISO(realToday);
+        }
 
         // If the active profile is the user's own budget, ensure it's mirrored in STORAGE_USER_KEY
         if (!isDemo && parsed.profile && parsed.profile.id !== 'usr-aryan') {
@@ -116,6 +130,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         setCategories(DEFAULT_CATEGORIES);
         setTransactions([]);
         setRecurringExpenses([]);
+        setTodayISO(realToday);
         setIsDemoMode(false);
       }
     } catch (e) {
@@ -125,6 +140,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
       setCategories(DEFAULT_CATEGORIES);
       setTransactions([]);
       setRecurringExpenses([]);
+      setTodayISO(formatISODate(new Date()));
       setIsDemoMode(false);
     }
     setIsInitialized(true);
@@ -171,6 +187,50 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
       recurringExpenses,
     });
   }, [todayISO, cycle, transactions, recurringExpenses, isOnboarded]);
+
+  // Derived: Check if a cycle rollover is due
+  const rolloverStatus = useMemo(() => {
+    if (isDemoMode || !cycle || !isOnboarded) return null;
+    const status = checkRolloverStatus(todayISO, cycle);
+    if (!status || !status.isDue) return null;
+    if (dismissedRolloverDate === todayISO) return null;
+    return status;
+  }, [todayISO, cycle, isOnboarded, isDemoMode, dismissedRolloverDate]);
+
+  const dismissRolloverForToday = useCallback(() => {
+    setDismissedRolloverDate(todayISO);
+  }, [todayISO]);
+
+  const resetDateToToday = useCallback(() => {
+    setTodayISO(formatISODate(new Date()));
+  }, []);
+
+  const rolloverCycle = useCallback(
+    (newAllowancePaise?: number) => {
+      if (!cycle) return;
+      const incomeCategory = categories.find(
+        c => c.name.toLowerCase().includes('income') || c.name.toLowerCase().includes('allowance')
+      )?.id || null;
+
+      const { updatedCycle, newAllowanceTransaction } = executeCycleRollover({
+        currentCycle: cycle,
+        todayISO,
+        newAllowancePaise,
+        incomeCategoryId: incomeCategory,
+      });
+
+      const fullTx: Transaction = {
+        ...newAllowanceTransaction,
+        id: `tx-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+        createdAt: new Date().toISOString(),
+      };
+
+      setCycle(updatedCycle);
+      setTransactions(prev => [fullTx, ...prev]);
+      setDismissedRolloverDate(null);
+    },
+    [cycle, todayISO, categories]
+  );
 
   // Handler: Complete Onboarding
   const completeOnboarding = useCallback(
@@ -388,7 +448,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         setCategories(parsed.categories || DEFAULT_CATEGORIES);
         setTransactions(parsed.transactions || []);
         setRecurringExpenses(parsed.recurringExpenses || []);
-        if (parsed.todayISO) setTodayISO(parsed.todayISO);
+        setTodayISO(formatISODate(new Date()));
         setIsDemoMode(false);
       } else {
         // If no user budget exists, reset to clean slate
@@ -434,6 +494,10 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         hasUserBudget,
         todayISO,
         setTodayISO,
+        resetDateToToday,
+        rolloverStatus,
+        rolloverCycle,
+        dismissRolloverForToday,
         completeOnboarding,
         addTransaction,
         editTransaction,

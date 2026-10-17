@@ -18,6 +18,7 @@ const geistMono = Geist_Mono({
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
   themeColor: "#0f172a",
 };
 
@@ -25,6 +26,16 @@ export const metadata: Metadata = {
   title: "Parity — Student Budgeting & Run-Out Forecast",
   description: "A calm, zero-guilt money survival calculator and AI expense tracker for college students living on a limited allowance.",
   keywords: ["student budgeting", "money tracker", "allowance calculator", "safe daily spend", "college finance"],
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Parity",
+  },
+  icons: {
+    icon: "/icons/icon-192x192.png",
+    apple: "/icons/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
