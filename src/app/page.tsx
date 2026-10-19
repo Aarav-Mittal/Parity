@@ -7,6 +7,7 @@ import { UpcomingBillsCard } from '@/components/dashboard/UpcomingBillsCard';
 import { ContextualAlertsCard } from '@/components/dashboard/ContextualAlertsCard';
 import { CategoryBreakdownCard } from '@/components/dashboard/CategoryBreakdownCard';
 import { CycleRolloverModal } from '@/components/dashboard/CycleRolloverModal';
+import { QuickGuideModal } from '@/components/guide/QuickGuideModal';
 import { WhatIfSimulatorModal } from '@/components/dashboard/WhatIfSimulatorModal';
 import { TransactionLedger } from '@/components/transactions/TransactionLedger';
 import { AddTransactionModal } from '@/components/transactions/AddTransactionModal';
@@ -21,27 +22,23 @@ import {
   Plus,
   Sparkles,
   RotateCcw,
-  UserCheck,
   CalendarDays,
   Calculator,
-  ArrowLeft,
+  HelpCircle,
 } from 'lucide-react';
 
 export default function Home() {
   const {
     isOnboarded,
     isInitialized,
-    isDemoMode,
-    hasUserBudget,
     todayISO,
     setTodayISO,
     resetDateToToday,
-    switchToDemo,
-    switchToUserBudget,
     resetToCleanSlate,
   } = useMoney();
 
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
@@ -129,31 +126,16 @@ export default function Home() {
             </div>
 
             <div className="flex items-center gap-1">
-              {isDemoMode && hasUserBudget ? (
-                /* When in Demo mode, show quick button to return to My Budget */
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={switchToUserBudget}
-                  title="Return to your personal ledger"
-                  className="text-xs bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 font-semibold gap-1.5 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  <span>My Budget</span>
-                </Button>
-              ) : (
-                /* When in User mode, show option to inspect Demo */
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={switchToDemo}
-                  title="View Aryan's sample student data"
-                  className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-                >
-                  <UserCheck className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                  <span className="hidden md:inline">Demo Persona (Aryan)</span>
-                </Button>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsGuideOpen(true)}
+                title="How Parity Works - Quick Feature Guide"
+                className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 gap-1.5"
+              >
+                <HelpCircle className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span className="hidden md:inline">How It Works</span>
+              </Button>
 
               <Button
                 variant="ghost"
@@ -166,7 +148,7 @@ export default function Home() {
                 className="text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
               >
                 <RotateCcw className="h-3.5 w-3.5 text-slate-500 dark:text-slate-400" />
-                <span className="hidden md:inline">New Budget</span>
+                <span className="hidden md:inline">Reset / New Budget</span>
               </Button>
             </div>
 
@@ -204,46 +186,17 @@ export default function Home() {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={switchToDemo}
-                className="w-full sm:w-auto dark:border-slate-700 dark:hover:bg-slate-800"
+                onClick={() => setIsGuideOpen(true)}
+                className="w-full sm:w-auto dark:border-slate-700 dark:hover:bg-slate-800 gap-2"
               >
-                <UserCheck className="h-4 w-4" /> Load Aryan's Demo Profile
+                <HelpCircle className="h-4 w-4 text-emerald-500" />
+                Quick Feature Guide
               </Button>
             </div>
           </div>
         ) : (
           /* Active Dashboard View */
           <div className="space-y-6">
-            {/* Demo Mode Notice Banner (If user is viewing Aryan's profile) */}
-            {isDemoMode && (
-              <div className="flex flex-wrap items-center justify-between gap-2.5 rounded-2xl bg-indigo-50/80 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800/80 p-3.5 text-xs text-indigo-950 dark:text-indigo-200 shadow-2xs">
-                <div className="flex items-center gap-2">
-                  <UserCheck className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                  <span>
-                    Viewing <strong>Aryan's Sample Profile</strong> (₹8,000 allowance).
-                    {hasUserBudget ? ' Your personal ledger is safely saved.' : ''}
-                  </span>
-                </div>
-                {hasUserBudget ? (
-                  <Button
-                    size="sm"
-                    onClick={switchToUserBudget}
-                    className="text-xs gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-600 py-1"
-                  >
-                    <ArrowLeft className="h-3.5 w-3.5" />
-                    Return to My Budget
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => setIsOnboardingOpen(true)}
-                    className="text-xs gap-1.5 py-1"
-                  >
-                    Set Up My Own Budget
-                  </Button>
-                )}
-              </div>
-            )}
 
             {/* Monthly Allowance Rollover Alert & Modal */}
             <CycleRolloverModal />
@@ -356,6 +309,13 @@ export default function Home() {
       <WhatIfSimulatorModal
         isOpen={isSimulatorOpen}
         onClose={() => setIsSimulatorOpen(false)}
+      />
+
+      <QuickGuideModal
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        onStartOnboarding={() => setIsOnboardingOpen(true)}
+        isOnboarded={isOnboarded}
       />
     </div>
   );

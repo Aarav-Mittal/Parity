@@ -9,13 +9,7 @@ import {
   Transaction,
   UserProfile,
 } from '@/types/finance';
-import {
-  ARYAN_CYCLE,
-  ARYAN_PROFILE,
-  ARYAN_RECURRING,
-  ARYAN_TRANSACTIONS,
-  DEFAULT_CATEGORIES,
-} from './sampleData';
+import { DEFAULT_CATEGORIES } from './sampleData';
 import { calculateForecast } from '@/lib/finance/forecast';
 import { computeCycleDates, formatISODate } from '@/lib/finance/dates';
 import { checkRolloverStatus, executeCycleRollover, RolloverPreview } from '@/lib/finance/rollover';
@@ -62,9 +56,9 @@ interface MoneyContextType {
   togglePauseRecurringExpense: (id: string) => void;
   markRecurringExpensePaid: (id: string) => void;
   deleteRecurringExpense: (id: string) => void;
-  switchToDemo: () => void;
-  switchToUserBudget: () => void;
-  resetToDemo: () => void;
+  switchToDemo?: () => void;
+  switchToUserBudget?: () => void;
+  resetToDemo?: () => void;
   resetToCleanSlate: () => void;
 }
 
@@ -101,30 +95,36 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
 
       if (savedActive) {
         const parsed = JSON.parse(savedActive);
-        setProfile(parsed.profile);
-        setCycle(parsed.cycle);
-        setCategories(parsed.categories || DEFAULT_CATEGORIES);
-        setTransactions(parsed.transactions || []);
-        setRecurringExpenses(parsed.recurringExpenses || []);
+        const isLegacyDemo = Boolean(
+          parsed.isDemoMode ||
+          parsed.profile?.id === 'usr-aryan' ||
+          parsed.profile?.id === 'aryan-123'
+        );
 
-        const isDemo = Boolean(parsed.isDemoMode || parsed.profile?.id === 'usr-aryan');
-        setIsDemoMode(isDemo);
-
-        if (isDemo) {
-          // Demo persona uses sample date timeline
-          setTodayISO(parsed.todayISO || '2026-10-15');
-        } else {
-          // Real user budgets automatically track against the student's real device date
+        if (isLegacyDemo) {
+          // Cleanly purge old Aryan demo profile from client storage
+          localStorage.removeItem(STORAGE_ACTIVE_KEY);
+          localStorage.removeItem(STORAGE_USER_KEY);
+          setProfile(null);
+          setCycle(null);
+          setCategories(DEFAULT_CATEGORIES);
+          setTransactions([]);
+          setRecurringExpenses([]);
           setTodayISO(realToday);
-        }
-
-        // If the active profile is the user's own budget, ensure it's mirrored in STORAGE_USER_KEY
-        if (!isDemo && parsed.profile && parsed.profile.id !== 'usr-aryan') {
+          setHasUserBudget(false);
+          setIsDemoMode(false);
+        } else {
+          setProfile(parsed.profile);
+          setCycle(parsed.cycle);
+          setCategories(parsed.categories || DEFAULT_CATEGORIES);
+          setTransactions(parsed.transactions || []);
+          setRecurringExpenses(parsed.recurringExpenses || []);
+          setTodayISO(realToday);
           setHasUserBudget(true);
-          localStorage.setItem(STORAGE_USER_KEY, savedActive);
+          setIsDemoMode(false);
         }
       } else {
-        // Clean slate by default - students land on the decision page to load Aryan or set up budget
+        // Clean slate by default - students land on onboarding setup
         setProfile(null);
         setCycle(null);
         setCategories(DEFAULT_CATEGORIES);
@@ -202,7 +202,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
   }, [todayISO]);
 
   const resetDateToToday = useCallback(() => {
-    const targetDate = isDemoMode ? '2026-10-15' : formatISODate(new Date());
+    const targetDate = formatISODate(new Date());
     setTodayISO(targetDate);
     setDismissedRolloverDate(null);
 
@@ -221,7 +221,7 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         nextPayoutDate,
       };
     });
-  }, [isDemoMode]);
+  }, []);
 
   const handleSetTodayISO = useCallback((dateISO: string) => {
     setTodayISO(dateISO);
@@ -441,66 +441,6 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
     setRecurringExpenses(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  // Handler: Switch to Demo Persona (Aryan) with safe backup of user budget
-  const switchToDemo = useCallback(() => {
-    // If user has an active real budget, back it up to STORAGE_USER_KEY first
-    if (!isDemoMode && profile && profile.id !== 'usr-aryan') {
-      try {
-        localStorage.setItem(
-          STORAGE_USER_KEY,
-          JSON.stringify({
-            profile,
-            cycle,
-            categories,
-            transactions,
-            recurringExpenses,
-            todayISO,
-            isDemoMode: false,
-          })
-        );
-        setHasUserBudget(true);
-      } catch (err) {
-        console.error('Failed to backup user budget', err);
-      }
-    }
-
-    setProfile(ARYAN_PROFILE);
-    setCycle(ARYAN_CYCLE);
-    setCategories(DEFAULT_CATEGORIES);
-    setTransactions(ARYAN_TRANSACTIONS);
-    setRecurringExpenses(ARYAN_RECURRING);
-    setTodayISO('2026-10-15');
-    setIsDemoMode(true);
-  }, [isDemoMode, profile, cycle, categories, transactions, recurringExpenses, todayISO]);
-
-  // Handler: Switch back to User's Actual Personal Budget
-  const switchToUserBudget = useCallback(() => {
-    try {
-      const savedUser = localStorage.getItem(STORAGE_USER_KEY);
-      if (savedUser) {
-        const parsed = JSON.parse(savedUser);
-        setProfile(parsed.profile);
-        setCycle(parsed.cycle);
-        setCategories(parsed.categories || DEFAULT_CATEGORIES);
-        setTransactions(parsed.transactions || []);
-        setRecurringExpenses(parsed.recurringExpenses || []);
-        setTodayISO(formatISODate(new Date()));
-        setIsDemoMode(false);
-      } else {
-        // If no user budget exists, reset to clean slate
-        setProfile(null);
-        setCycle(null);
-        setTransactions([]);
-        setRecurringExpenses([]);
-        setCategories(DEFAULT_CATEGORIES);
-        setTodayISO(formatISODate(new Date()));
-        setIsDemoMode(false);
-      }
-    } catch (e) {
-      console.error('Failed to restore user budget', e);
-    }
-  }, []);
-
   // Handler: Reset to Clean Slate (Starts New Budget)
   const resetToCleanSlate = useCallback(() => {
     setProfile(null);
@@ -542,9 +482,6 @@ export function MoneyProvider({ children }: { children: React.ReactNode }) {
         togglePauseRecurringExpense,
         markRecurringExpensePaid,
         deleteRecurringExpense,
-        switchToDemo,
-        switchToUserBudget,
-        resetToDemo: switchToDemo,
         resetToCleanSlate,
       }}
     >
